@@ -1,1 +1,14 @@
-
+{
+  "name": "teacher-live-studio",
+  "version": "1.0.0",
+  "description": "선생님 실시간 라이브 스튜디오 서버",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.5"
+  }
+}
