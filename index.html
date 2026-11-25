@@ -1,10 +1,10 @@
-```html
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>선생님 실시간 라이브 스튜디오</title>
+    <title>선생님 실시간 라이브 스튜디오 PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -30,33 +30,46 @@
             100% { transform: scale(1) translateY(0); opacity: 1; }
         }
         .donation-pop { animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes gifWiggle {
+            0%, 100% { transform: rotate(-6deg) scale(1); }
+            50% { transform: rotate(6deg) scale(1.12); }
+        }
+        .gif-anim { display: inline-block; animation: gifWiggle 0.8s infinite ease-in-out; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
     <!-- 상단 내비게이션 바 -->
-    <header class="h-16 border-b border-slate-800 bg-slate-900/90 backdrop-blur px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
-        <div class="flex items-center gap-3">
+    <header class="h-16 border-b border-slate-800 bg-slate-900/95 backdrop-blur px-3 md:px-6 flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
                 <i class="fa-solid fa-tower-broadcast text-white text-base"></i>
             </div>
             <div>
-                <h1 class="font-black text-base md:text-lg tracking-tight text-white flex items-center gap-2">
+                <h1 class="font-black text-sm md:text-base tracking-tight text-white flex items-center gap-2">
                     선생님 라이브 스튜디오
                     <span id="liveBadge" class="hidden px-2 py-0.5 text-[10px] font-black bg-red-600 text-white rounded-full animate-pulse">LIVE</span>
                 </h1>
-                <p id="headerSubtitle" class="text-[11px] text-slate-400">전용 실시간 서버 연결 준비 완료</p>
+                <p id="headerSubtitle" class="text-[11px] text-slate-400">실시간 소통 & 교과 퀴즈 스튜디오</p>
             </div>
         </div>
 
-        <div id="headerActions" class="hidden flex items-center gap-2 md:gap-3">
-            <div class="hidden sm:flex items-center gap-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
-                <span class="text-slate-400">참여 코드:</span>
-                <span id="displayRoomCode" class="font-mono font-black text-indigo-400 tracking-widest text-sm">------</span>
+        <div id="headerActions" class="hidden flex items-center gap-2">
+            <!-- 구독자 & 좋아요 현황판 -->
+            <div class="flex items-center gap-2 bg-slate-800/90 border border-slate-700 px-2.5 py-1.5 rounded-xl text-xs">
+                <span class="text-red-400 font-bold"><i class="fa-solid fa-bell mr-1"></i><span id="subCountText">124</span></span>
+                <span class="text-slate-600">|</span>
+                <span class="text-pink-400 font-bold"><i class="fa-solid fa-thumbs-up mr-1"></i><span id="likeCountText">0</span></span>
             </div>
-            <button onclick="openShareModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/20">
+
+            <div class="hidden md:flex items-center gap-1.5 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
+                <span class="text-slate-400">코드:</span>
+                <span id="displayRoomCode" class="font-mono font-black text-indigo-400 tracking-widest">------</span>
+            </div>
+
+            <button onclick="openShareModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
                 <i class="fa-solid fa-share-nodes"></i>
-                <span>학생 초대</span>
+                <span class="hidden sm:inline">학생 초대</span>
             </button>
         </div>
     </header>
@@ -87,9 +100,9 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1.5">수업 방송 제목</label>
-                    <input type="text" id="teacherRoomTitle" value="즐거운 실시간 소통 수업" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500">
+                    <input type="text" id="teacherRoomTitle" value="즐거운 실시간 소통 & 교과 퀴즈 수업" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500">
                 </div>
-                <button type="submit" id="btnCreateRoom" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-video"></i>
                     <span>라이브 수업 개설하기</span>
                 </button>
@@ -105,21 +118,27 @@
                     <label class="block text-xs font-bold text-slate-400 mb-1.5">참여 코드 (6자리 숫자)</label>
                     <input type="text" id="joinRoomCode" maxlength="6" placeholder="예: 123456" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-center font-mono text-lg tracking-widest text-indigo-400 font-black focus:outline-none focus:border-indigo-500">
                 </div>
-                <button type="submit" id="btnJoinRoom" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-right-to-bracket"></i>
-                    <span>수업 입장하기 (500pt 지급)</span>
+                    <span>수업 입장하기 (기본 300pt 지급)</span>
                 </button>
             </form>
+
+            <!-- 서버 연결 상태 표시 -->
+            <div class="mt-5 pt-4 border-t border-slate-800 flex items-center justify-center gap-2 text-xs">
+                <span id="lobbyStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                <span id="lobbyStatusText" class="text-slate-400 font-bold">서버 깨우는 중... (최대 30초 소요)</span>
+            </div>
         </div>
     </main>
 
     <!-- 2. 메인 라이브 스튜디오 화면 -->
-    <main id="studioView" class="hidden flex-1 max-w-[1500px] w-full mx-auto p-3 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
+    <main id="studioView" class="hidden flex-1 max-w-[1550px] w-full mx-auto p-3 md:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
         <!-- 왼쪽: 방송 영상 & 컨트롤 영역 (8칸) -->
-        <div class="lg:col-span-8 flex flex-col gap-4">
+        <div class="lg:col-span-8 flex flex-col gap-3">
             <!-- 상단 고정 공지 배너 -->
-            <div id="pinnedNoticeBanner" class="hidden bg-amber-500/15 border border-amber-500/40 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2.5 text-amber-300 text-xs md:text-sm font-bold">
+            <div id="pinnedNoticeBanner" class="hidden bg-amber-500/15 border border-amber-500/40 rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 text-amber-300 text-xs md:text-sm font-bold">
                     <i class="fa-solid fa-thumbtack text-amber-400"></i>
                     <span id="noticeBannerText">공지사항 내용이 여기에 표시됩니다.</span>
                 </div>
@@ -134,7 +153,7 @@
                     <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500 text-2xl">
                         <i class="fa-solid fa-display"></i>
                     </div>
-                    <p id="placeholderText" class="text-sm font-bold text-slate-300">송출 대기 중입니다</p>
+                    <p class="text-sm font-bold text-slate-300">송출 대기 중입니다</p>
                     <p class="text-xs text-slate-500 mt-1">선생님이 화면 공유, 카메라 또는 스마트 칠판을 켜면 여기에 표시됩니다.</p>
                 </div>
 
@@ -179,42 +198,71 @@
                     <span class="text-amber-400 font-black">👑 후원 1위</span>
                     <span id="topDonatorText" class="font-bold text-white">-</span>
                 </div>
+
+                <!-- BGM 재생 상태 배지 -->
+                <div id="bgmBadge" class="hidden absolute top-3 right-3 z-20 bg-indigo-950/85 backdrop-blur border border-indigo-500/40 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs text-indigo-300 font-bold">
+                    <i class="fa-solid fa-music animate-bounce"></i>
+                    <span id="bgmNameText">BGM 재생 중</span>
+                </div>
             </div>
 
-            <!-- 하단 컨트롤 바 (선생님 전용) -->
+            <!-- 하단 컨트롤 바 (선생님 전용: 송출 + BGM + 공지) -->
             <div id="teacherControls" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
                 <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="toggleScreenShare()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-2">
+                    <button onclick="toggleScreenShare()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
                         <i class="fa-solid fa-desktop"></i>
                         <span>화면 공유</span>
                     </button>
-                    <button onclick="toggleCamera()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-2">
+                    <button onclick="toggleCamera()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
                         <i class="fa-solid fa-camera"></i>
-                        <span>카메라 켜기</span>
+                        <span>카메라</span>
                     </button>
-                    <button onclick="toggleWhiteboard()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-2">
+                    <button onclick="toggleWhiteboard()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
                         <i class="fa-solid fa-chalkboard"></i>
-                        <span>스마트 칠판</span>
+                        <span>칠판</span>
                     </button>
+
+                    <!-- 선생님 BGM 플레이어 선택 -->
+                    <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl">
+                        <i class="fa-solid fa-music text-indigo-400 text-xs"></i>
+                        <select id="bgmSelect" onchange="handleTeacherBgmChange()" class="bg-transparent text-xs text-slate-200 font-bold focus:outline-none">
+                            <option value="none" class="bg-slate-900">노래 끄기 (무음)</option>
+                            <option value="happy" class="bg-slate-900">🎵 신나는 수업 BGM</option>
+                            <option value="lofi" class="bg-slate-900">☕ 집중 공부 로파이</option>
+                            <option value="quiz" class="bg-slate-900">⚡ 두근두근 퀴즈쇼 BGM</option>
+                        </select>
+                    </div>
                 </div>
-                <button onclick="document.getElementById('noticeModal').classList.remove('hidden')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+
+                <button onclick="document.getElementById('noticeModal').classList.remove('hidden')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
                     <i class="fa-solid fa-bullhorn"></i>
-                    <span>공지 띄우기</span>
+                    <span>공지</span>
                 </button>
             </div>
 
-            <!-- 하단 컨트롤 바 (학생 전용) -->
-            <div id="studentControls" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2 text-xs">
-                    <span class="text-slate-400">내 보유 포인트:</span>
-                    <span id="studentBalanceText" class="font-black text-amber-400 text-sm">500 pt</span>
-                </div>
+            <!-- 하단 컨트롤 바 (학생 전용: 구독/좋아요 + 포인트 벌기 게임 + 후원) -->
+            <div id="studentControls" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
-                    <button onclick="sendHeartReaction()" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-400 text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-heart"></i>
-                        <span>하트 보내기</span>
+                    <div class="bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs">
+                        <span class="text-slate-400">내 포인트:</span>
+                        <span id="studentBalanceText" class="font-black text-amber-400 ml-1">300 pt</span>
+                    </div>
+                    <button id="btnSubscribe" onclick="handleToggleSubscribe()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3 py-2 rounded-xl transition flex items-center gap-1">
+                        <i class="fa-solid fa-bell"></i>
+                        <span>구독</span>
                     </button>
-                    <button onclick="document.getElementById('donateModal').classList.remove('hidden')" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+                    <button onclick="handleSendLike()" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-400 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1">
+                        <i class="fa-solid fa-thumbs-up"></i>
+                        <span>좋아요</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="openEarnModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/20">
+                        <i class="fa-solid fa-coins"></i>
+                        <span>포인트 얻기 (퀴즈/게임)</span>
+                    </button>
+                    <button onclick="openDonateModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
                         <i class="fa-solid fa-gift"></i>
                         <span>후원하기</span>
                     </button>
@@ -223,25 +271,121 @@
         </div>
 
         <!-- 오른쪽: 실시간 채팅 스튜디오 (4칸) -->
-        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[560px] lg:h-[650px] overflow-hidden shadow-2xl">
-            <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[580px] lg:h-[670px] overflow-hidden shadow-2xl">
+            <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-comments text-indigo-400"></i>
                     <h2 class="font-black text-sm text-white">실시간 라이브 댓글</h2>
                 </div>
-                <span id="connectionBadge" class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">서버 연결됨</span>
+                <div class="flex items-center gap-2">
+                    <span id="unlockLevelBadge" class="text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">누적후원 0pt</span>
+                    <span id="connectionBadge" class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">연결됨</span>
+                </div>
             </div>
 
-            <div id="chatBox" class="flex-1 p-4 overflow-y-auto chat-scroll space-y-3 text-xs">
-                <div class="text-center text-slate-500 py-2">수업 라이브 방이 준비되었습니다!</div>
+            <div id="chatBox" class="flex-1 p-3.5 overflow-y-auto chat-scroll space-y-2.5 text-xs">
+                <div class="text-center text-slate-500 py-2">실시간 채팅창입니다. 연속 6회 입력 시 9초간 도배 방지 쿨타임이 적용됩니다!</div>
             </div>
 
-            <form onsubmit="handleSendChat(event)" class="p-3 border-t border-slate-800 bg-slate-950 flex gap-2">
-                <input type="text" id="chatInput" placeholder="실시간 댓글을 입력하세요..." autocomplete="off" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">전송</button>
+            <!-- 댓글 전용 이모지 & GIF 스티커 서랍 (후원 금액별 해금) -->
+            <div id="stickerDrawer" class="hidden border-t border-slate-800 bg-slate-950/95 p-3 space-y-2.5">
+                <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-black text-amber-400"><i class="fa-solid fa-face-smile-beam mr-1"></i>댓글 전용 이모지 & GIF 스티커</span>
+                    <span class="text-slate-400">후원할수록 자동 해금!</span>
+                </div>
+                <div id="stickerGrid" class="grid grid-cols-4 gap-1.5 max-h-36 overflow-y-auto"></div>
+            </div>
+
+            <!-- 도배 방지 안내 바 -->
+            <div id="spamWarningBar" class="hidden bg-red-600/20 border-t border-red-500/40 px-3 py-1.5 text-[11px] font-bold text-red-300 text-center">
+                🚫 도배 방지! <span id="spamCountdown">9</span>초 후에 다시 입력할 수 있습니다.
+            </div>
+
+            <form onsubmit="handleSendChat(event)" class="p-2.5 border-t border-slate-800 bg-slate-950 flex gap-1.5 items-center">
+                <button type="button" onclick="toggleStickerDrawer()" title="댓글 전용 이모지/GIF" class="bg-slate-800 hover:bg-slate-700 text-amber-400 px-3 py-2.5 rounded-xl text-xs font-bold transition">
+                    <i class="fa-solid fa-icons"></i>
+                </button>
+                <input type="text" id="chatInput" placeholder="댓글 입력 (연속 6회 시 9초 제한)..." autocomplete="off" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                <button type="submit" id="btnChatSubmit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold transition">전송</button>
             </form>
         </div>
     </main>
+
+    <!-- 포인트 얻기 모달 (교과서 퀴즈 100문제 + 가위바위보) -->
+    <div id="earnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-base text-white"><i class="fa-solid fa-coins text-amber-400 mr-2"></i>포인트 벌기 미니게임</h3>
+                <button onclick="document.getElementById('earnModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs font-bold">
+                <button type="button" id="eTabQuiz" onclick="switchEarnTab('quiz')" class="py-2.5 rounded-xl bg-indigo-600 text-white">📚 교과서 퀴즈 (100문제)</button>
+                <button type="button" id="eTabRps" onclick="switchEarnTab('rps')" class="py-2.5 rounded-xl text-slate-400">✊✌️🖐️ 가위바위보 배틀</button>
+            </div>
+
+            <div id="earnQuizSection" class="space-y-4">
+                <div class="flex items-center justify-between gap-2">
+                    <select id="quizSubjectFilter" onchange="loadNextQuiz()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-indigo-300 focus:outline-none">
+                        <option value="all">전체 과목 랜덤 (100문제)</option>
+                        <option value="사회">🌍 비상 중1 사회 (2학기 핵심)</option>
+                        <option value="과학">🔬 중1 과학</option>
+                        <option value="수학">📐 중1 수학</option>
+                        <option value="영어">🔤 중1 영어</option>
+                    </select>
+                    <span id="quizRewardBadge" class="text-xs font-black text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl">정답 시 +100 pt</span>
+                </div>
+
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span id="quizTag" class="text-[11px] font-black text-indigo-400 bg-indigo-500/15 px-2.5 py-0.5 rounded-full">비상 사회 1-2</span>
+                        <span id="quizCounter" class="text-[11px] text-slate-500">랜덤 출제 (보기 순서 무작위)</span>
+                    </div>
+                    <p id="quizQuestionText" class="text-sm md:text-base font-bold text-white leading-relaxed">문제를 불러오는 중...</p>
+                    <div id="quizOptionsBox" class="space-y-2 pt-1"></div>
+                </div>
+
+                <div id="quizFeedbackBox" class="hidden p-3 rounded-xl text-xs font-bold text-center"></div>
+
+                <button type="button" onclick="loadNextQuiz()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
+                    <i class="fa-solid fa-shuffle mr-1"></i>다음 랜덤 문제 뽑기
+                </button>
+            </div>
+
+            <div id="earnRpsSection" class="hidden space-y-4 text-center">
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3">
+                    <p class="text-xs text-slate-400 font-bold">승리 시 <span class="text-emerald-400">+120 pt</span> / 무승부 <span class="text-amber-400">+30 pt</span></p>
+                    <div class="flex items-center justify-center gap-6 py-3">
+                        <div>
+                            <div id="rpsMyHand" class="text-5xl mb-1">❓</div>
+                            <span class="text-[11px] text-slate-400 font-bold">나</span>
+                        </div>
+                        <span class="text-lg font-black text-slate-600">VS</span>
+                        <div>
+                            <div id="rpsBotHand" class="text-5xl mb-1">🤖</div>
+                            <span class="text-[11px] text-slate-400 font-bold">AI 봇</span>
+                        </div>
+                    </div>
+                    <p id="rpsResultText" class="text-sm font-black text-indigo-300">아래에서 가위, 바위, 보 중 하나를 선택하세요!</p>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="playRps('가위')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-2xl font-black transition flex flex-col items-center gap-1">
+                        <span>✌️</span>
+                        <span class="text-xs">가위</span>
+                    </button>
+                    <button type="button" onclick="playRps('바위')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-2xl font-black transition flex flex-col items-center gap-1">
+                        <span>✊</span>
+                        <span class="text-xs">바위</span>
+                    </button>
+                    <button type="button" onclick="playRps('보')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-2xl font-black transition flex flex-col items-center gap-1">
+                        <span>🖐️</span>
+                        <span class="text-xs">보</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- 공지 작성 모달 -->
     <div id="noticeModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -250,7 +394,7 @@
                 <h3 class="font-black text-base text-white"><i class="fa-solid fa-bullhorn text-amber-400 mr-2"></i>수업 공지 띄우기</h3>
                 <button onclick="document.getElementById('noticeModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <input type="text" id="noticeInput" placeholder="예: 교과서 42페이지를 펴주세요!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white">
+            <input type="text" id="noticeInput" placeholder="예: 비상 사회 교과서 2학기 1단원 펴세요!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white">
             <button onclick="submitNotice()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl text-sm">공지 등록하기</button>
         </div>
     </div>
@@ -263,6 +407,10 @@
                 <button onclick="document.getElementById('donateModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
+            <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-2.5 text-[11px] text-amber-200">
+                💡 후원을 많이 할수록(100pt / 300pt / 600pt / 1000pt) <b>댓글 전용 이모지와 GIF 스티커</b>가 해금됩니다!
+            </div>
+
             <div class="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-bold">
                 <button type="button" onclick="selectDonateType('text')" id="dTabText" class="py-2 rounded-lg bg-amber-500 text-slate-950">💬 텍스트</button>
                 <button type="button" onclick="selectDonateType('emoji')" id="dTabEmoji" class="py-2 rounded-lg text-slate-400">😎 이모지</button>
@@ -273,9 +421,10 @@
             <div>
                 <label class="block text-xs font-bold text-slate-400 mb-1">후원 포인트</label>
                 <select id="donateAmount" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white">
-                    <option value="50">50 pt (가벼운 응원)</option>
-                    <option value="100" selected>100 pt (열정 응원)</option>
-                    <option value="300">300 pt (슈퍼 후원)</option>
+                    <option value="100" selected>100 pt (가벼운 응원)</option>
+                    <option value="300">300 pt (열정 응원)</option>
+                    <option value="500">500 pt (슈퍼 후원)</option>
+                    <option value="1000">1000 pt (전설의 레전드 후원)</option>
                 </select>
             </div>
 
@@ -303,7 +452,7 @@
 
             <div>
                 <label class="block text-xs font-bold text-slate-400 mb-1">응원 메시지 (AI 음성으로 읽어줍니다)</label>
-                <input type="text" id="donateMessage" placeholder="선생님 수업 정말 재밌어요!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white">
+                <input type="text" id="donateMessage" placeholder="선생님 수업 최고예요!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white">
             </div>
 
             <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
@@ -340,20 +489,142 @@
     </div>
 
     <script>
-        const socket = typeof io !== 'undefined' ? io() : null;
+        const socket = typeof io !== 'undefined' ? io({ transports: ['websocket', 'polling'] }) : null;
+
+        const COMMENT_STICKERS = [
+            { id: 's1', req: 0, type: 'emoji', icon: '👍', label: '기본 엄지척' },
+            { id: 's2', req: 0, type: 'emoji', icon: '😊', label: '기본 미소' },
+            { id: 's3', req: 100, type: 'emoji', icon: '🔥', label: '100pt 열정불꽃' },
+            { id: 's4', req: 100, type: 'gif', icon: '🎉', label: '100pt 폭죽GIF' },
+            { id: 's5', req: 300, type: 'emoji', icon: '💖', label: '300pt 핑크하트' },
+            { id: 's6', req: 300, type: 'gif', icon: '🚀', label: '300pt 로켓발사GIF' },
+            { id: 's7', req: 600, type: 'gif', icon: '🦖', label: '600pt 댄싱공룡GIF' },
+            { id: 's8', req: 1000, type: 'gif', icon: '👑', label: '1000pt 황금왕관GIF' }
+        ];
+
+        const QUIZ_BANK = [
+            { s: '사회', q: '한 사회의 구성원들이 공유하는 생활 양식의 총체를 무엇이라고 하는가?', a: ['문화', '자연환경', '유전 형질', '본능'] },
+            { s: '사회', q: '다음 중 "문화"에 해당하지 않는 현상은 무엇인가?', a: ['더울 때 땀을 흘리는 현상', '한복을 입고 명절을 쇠는 모습', '젓가락을 사용해 음식을 먹는 습관', '한글로 일기를 쓰는 행동'] },
+            { s: '사회', q: '문화의 속성 중 "문화는 태어날 때부터 타고나는 것이 아니라 후천적으로 배워서 익히는 것"을 뜻하는 속성은?', a: ['학습성', '공유성', '변동성', '축적성'] },
+            { s: '사회', q: '문화의 속성 중 "한 사회의 구성원들이 공통으로 가지고 있어 서로의 행동을 예측할 수 있게 하는 성질"은?', a: ['공유성', '전체성', '변동성', '보편성'] },
+            { s: '사회', q: '문화가 세대를 거쳐 전승되면서 새로운 요소가 더해져 더욱 풍부해지는 문화의 속성은?', a: ['축적성', '학습성', '상대성', '고정성'] },
+            { s: '사회', q: '문화의 여러 요소(언어, 종교, 가족 제도 등)가 서로 밀접하게 연결되어 하나의 체계를 이루는 속성은?', a: ['전체성(총체성)', '변동성', '공유성', '학습성'] },
+            { s: '사회', q: '시간이 흐르면서 새로운 발명이나 교류를 통해 문화의 모습이 달라지는 속성은?', a: ['변동성', '축적성', '학습성', '보편성'] },
+            { s: '사회', q: '자신이 속한 사회의 문화만을 가장 우수하다고 여기고 다른 문화를 열등하게 평가하는 태도는?', a: ['자문화 중심주의', '문화 사대주의', '문화 상대주의', '다문화주의'] },
+            { s: '사회', q: '다른 사회의 문화를 무조건 동경하고 숭배하며 자기 문화를 낮게 평가하는 태도는?', a: ['문화 사대주의', '자문화 중심주의', '문화 상대주의', '국수주의'] },
+            { s: '사회', q: '각 사회의 문화를 그 사회가 처한 자연환경과 역사적 맥락 속에서 이해하려는 태도는?', a: ['문화 상대주의', '자문화 중심주의', '문화 사대주의', '극단적 상대주의'] },
+            { s: '사회', q: '문화 상대주의 태도를 가질 때에도 결코 인정해서는 안 되는 인류의 보편적 가치는?', a: ['인간 존엄성과 인권', '특정 국가의 언어', '전통 의복의 색상', '식사 도구의 종류'] },
+            { s: '사회', q: '비상 사회 교과서에서 다루는 "넓은 의미의 문화"의 예로 가장 적절한 것은?', a: ['청소년 문화, 식생활 문화', '교양 있는 사람', '문화재 관람', '클래식 음악 감상'] },
+            { s: '사회', q: '문화 이해 태도 중 자기 문화의 정체성을 상실할 위험이 가장 큰 태도는?', a: ['문화 사대주의', '문화 상대주의', '자문화 중심주의', '관용적 태도'] },
+            { s: '사회', q: '문화 이해 태도 중 다른 집단과 문화적 마찰이나 갈등을 일으키기 쉬운 태도는?', a: ['자문화 중심주의', '문화 상대주의', '문화 사대주의', '문화 다원주의'] },
+            { s: '사회', q: '모든 사회에 공통적으로 나타나는 가족, 언어, 종교 등의 문화 현상을 무엇이라 하는가?', a: ['문화의 보편성', '문화의 특수성', '문화의 변동성', '문화의 획일성'] },
+            { s: '사회', q: '개인이 자신이 속한 사회의 언어, 규범, 가치관 등을 배우고 내면화하는 과정을 무엇이라 하는가?', a: ['사회화', '자연화', '산업화', '도시화'] },
+            { s: '사회', q: '태어나서 가장 먼저 기초적인 언어와 예절을 배우는 1차적 사회화 기관은?', a: ['가정(가족)', '회사', '대중매체', '정부 기관'] },
+            { s: '사회', q: '사회화를 목적으로 설립된 대표적인 공식적 사회화 기관은 무엇인가?', a: ['학교', '또래 집단', '가정', '동호회'] },
+            { s: '사회', q: '빠르게 변하는 현대 사회에서 성인이 된 이후에도 새로운 지식과 기술을 다시 배우는 과정은?', a: ['재사회화', '예기 사회화', '탈사회화', '1차 사회화'] },
+            { s: '사회', q: '개인이 사회 속에서 차지하고 있는 위치를 무엇이라고 하는가?', a: ['사회적 지위', '역할 행동', '사회 규범', '역할 갈등'] },
+            { s: '사회', q: '개인의 노력이나 능력과 관계없이 태어나면서 자연스럽게 얻게 되는 지위는?', a: ['귀속 지위', '성취 지위', '역할 지위', '공식 지위'] },
+            { s: '사회', q: '다음 중 "귀속 지위"에 해당하는 것은 무엇인가?', a: ['딸, 아들, 왕족', '의사, 축구 선수', '중학생, 반장', '선생님, 요리사'] },
+            { s: '사회', q: '개인의 노력과 선택, 의지에 의해 후천적으로 획득하는 지위는 무엇인가?', a: ['성취 지위', '귀속 지위', '선천적 지위', '고정 지위'] },
+            { s: '사회', q: '개인이 가진 사회적 지위에 따라 사회적으로 기대되는 행동 양식을 무엇이라 하는가?', a: ['역할', '지위', '규범', '제재'] },
+            { s: '사회', q: '개인이 자신의 역할을 실제로 수행하는 구체적인 모습을 무엇이라고 하는가?', a: ['역할 행동', '기대 역할', '귀속 지위', '사회화'] },
+            { s: '사회', q: '한 개인이 가진 여러 지위에 따른 역할들이 서로 충돌하여 고민하게 되는 현상은?', a: ['역할 갈등', '역할 수행', '사회적 합의', '문화 지체'] },
+            { s: '사회', q: '둘 이상의 사람이 모여 소속감을 가지고 지속적으로 상호 작용하는 모임은?', a: ['사회 집단', '군중', '단순 집합', '관중'] },
+            { s: '사회', q: '다음 중 "사회 집단"에 해당하지 않는 것은 무엇인가?', a: ['버스 정류장에 줄 서 있는 사람들', '우리 반 학급 친구들', '학교 밴드 동아리', '우리 가족'] },
+            { s: '사회', q: '자신이 속해 있으면서 강한 소속감과 공동체 의식을 느끼는 집단은?', a: ['내집단', '외집단', '이익 사회', '2차 집단'] },
+            { s: '사회', q: '자신이 속해 있지 않으며 이질감이나 경쟁의식을 느끼는 집단은?', a: ['외집단', '내집단', '공동 사회', '1차 집단'] },
+            { s: '사회', q: '구성원 간의 친밀한 대면 접촉을 바탕으로 형성된 1차 집단의 예는?', a: ['가족, 또래 집단', '대기업 회사', '정당', '시민 단체'] },
+            { s: '사회', q: '특정한 목적을 달성하기 위해 인위적·수단적으로 결합한 2차 집단의 예는?', a: ['회사, 학교, 정당', '가족', '어린 시절 친구 모임', '혈연 집단'] },
+            { s: '사회', q: '대중매체의 순기능으로 가장 적절한 것은 무엇인가?', a: ['신속한 정보 전달과 여론 형성', '사생활 침해 증가', '가짜 뉴스 확산', '획일적 가치관 강요'] },
+            { s: '사회', q: '대중매체를 이용할 때 정보를 무조건 믿지 않고 비판적으로 분석하는 능력을 무엇이라 하는가?', a: ['미디어 리터러시(매체 이해력)', '자문화 중심주의', '사회적 이동', '역할 갈등'] },
+            { s: '사회', q: '뉴미디어(인터넷·SNS)가 기존 매스 미디어와 구별되는 가장 큰 특징은?', a: ['쌍방향 소통과 정보 생산의 용이성', '일방적 정보 전달', '정보 전달 속도가 느림', '시공간 제약이 큼'] },
+            { s: '사회', q: '한 국가의 최고법으로서 국민의 기본권을 보장하고 국가 운영의 원리를 정한 법은?', a: ['헌법', '민법', '형법', '행정법'] },
+            { s: '사회', q: '헌법이 보장하는 기본권 중 인간으로서의 존엄과 가치를 실현하기 위한 근본 권리는?', a: ['인간의 존엄과 가치 및 행복 추구권', '참정권', '청구권', '사회권'] },
+            { s: '사회', q: '모든 국민이 법 앞에 평등하며 성별·종교·사회적 신분에 의해 차별받지 않을 권리는?', a: ['평등권', '자유권', '참정권', '청구권'] },
+            { s: '사회', q: '국가 권력의 간섭을 받지 않고 자유롭게 생각하고 행동할 수 있는 소극적·방어적 권리는?', a: ['자유권', '사회권', '참정권', '청구권'] },
+            { s: '사회', q: '국민이 국가의 정치 과정에 참여할 수 있는 권리(선거권, 공무 담임권 등)는?', a: ['참정권', '자유권', '평등권', '사회권'] },
+            { s: '사회', q: '모든 국민이 인간다운 생활을 할 수 있도록 국가에 적극적으로 요구할 수 있는 권리는?', a: ['사회권', '자유권', '참정권', '평등권'] },
+            { s: '사회', q: '기본권이 침해되었을 때 국가에 구제를 요구할 수 있는 수단적 성격의 권리는?', a: ['청구권', '자유권', '사회권', '참정권'] },
+            { s: '사회', q: '국가 권력이 한 곳에 집중되어 남용되는 것을 막기 위해 입법·행정·사법으로 나누는 원리는?', a: ['권력 분립의 원리(삼권 분립)', '국민 주권의 원리', '법치주의', '문화 상대주의'] },
+            { s: '사회', q: '국민을 대표하여 법률을 제정하고 개정하는 국가 기관은 어디인가?', a: ['국회', '정부', '법원', '헌법 재판소'] },
+            { s: '사회', q: '국회의 권한 중 정부가 제출한 내년도 나라 살림 계획안을 심의·확정하는 권한은?', a: ['예산안 심의·확정권', '법률 집행권', '재판권', '사면권'] },
+            { s: '사회', q: '국회가 정부의 국정 운영 전반을 감시하고 잘못을 시정하도록 요구하는 권한은?', a: ['국정 감사 및 조사권', '위헌 법률 심판권', '조약 체결권', '대통령령 제정권'] },
+            { s: '사회', q: '국회가 만든 법률을 집행하고 국가의 공익을 실현하기 위한 정책을 추진하는 국가 기관은?', a: ['정부(행정부)', '국회(입법부)', '법원(사법부)', '선거 관리 위원회'] },
+            { s: '사회', q: '우리나라 행정부의 수반이자 국가 원수로서 외교와 국정을 총괄하는 지위는?', a: ['대통령', '국무총리', '국회의장', '대법원장'] },
+            { s: '사회', q: '대통령을 보좌하며 대통령의 명을 받아 행정 각부를 통할하는 지위는?', a: ['국무총리', '대법원장', '감사원장', '국회의장'] },
+            { s: '사회', q: '법률에 따라 분쟁을 해결하고 범죄자에게 형벌을 부과하는 재판을 담당하는 기관은?', a: ['법원', '국회', '정부', '감사원'] },
+            { s: '사회', q: '공정한 재판을 위해 법관이 헌법과 법률에 의하여 양심에 따라 독립하여 심판하는 원칙은?', a: ['사법권의 독립', '삼권 통합', '행정 우위', '다수결의 원칙'] },
+            { s: '사회', q: '공정한 재판을 보장하기 위해 같은 사건에 대해 세 번까지 재판을 받을 수 있도록 한 제도는?', a: ['심급 제도(3심제)', '배심원 제도', '국정 감사 제도', '국민 투표 제도'] },
+            { s: '사회', q: '헌법에 어긋나는 법률인지 여부를 심판하고 기본권 침해를 구제하는 최고 헌법 기관은?', a: ['헌법 재판소', '대법원', '국무회의', '감사원'] },
+            { s: '사회', q: '국회가 만든 법률이 헌법에 위반되는지 심판하는 헌법 재판소의 권한은?', a: ['위헌 법률 심판', '탄핵 심판', '정당 해산 심판', '권한 쟁의 심판'] },
+            { s: '사회', q: '공권력의 행사 또는 불행사로 헌법상 기본권을 침해받은 국민이 직접 구제를 청구하는 제도는?', a: ['헌법 소원 심판', '위헌 법률 심판', '행정 심판', '형사 재판'] },
+            { s: '사회', q: '인간의 욕구는 무한한데 이를 충족시켜 줄 자원은 상대적으로 부족한 현상을 무엇이라 하는가?', a: ['자원의 희소성', '자원의 무한성', '기회비용', '합리적 선택'] },
+            { s: '사회', q: '자원의 희소성 때문에 여러 대안 중 하나를 선택할 때 포기해야 하는 대안 중 가장 가치 있는 것은?', a: ['기회비용', '매몰 비용', '생산 비용', '유통 비용'] },
+            { s: '사회', q: '가장 적은 비용으로 가장 큰 편익(만족감)을 얻도록 선택하는 것을 무엇이라 하는가?', a: ['합리적 선택', '충동 소비', '과시 소비', '모방 소비'] },
+            { s: '사회', q: '이미 지출되어 회수할 수 없으므로 합리적 선택을 할 때 고려해서는 안 되는 비용은?', a: ['매몰 비용', '기회비용', '명시적 비용', '암묵적 비용'] },
+            { s: '사회', q: '재화와 서비스를 생산하고 분배하며 소비하는 모든 활동을 무엇이라고 하는가?', a: ['경제 활동', '정치 활동', '문화 활동', '봉사 활동'] },
+            { s: '사회', q: '소비 활동의 주체이자 노동·토지·자본 등 생산 요소를 제공하는 경제 주체는?', a: ['가계', '기업', '정부', '외국'] },
+            { s: '사회', q: '생산 요소를 결합하여 재화와 서비스를 생산하고 이윤 극대화를 추구하는 경제 주체는?', a: ['기업', '가계', '정부', '소비자 단체'] },
+            { s: '사회', q: '세금을 걷어 공공재를 생산하고 경제 안정을 위해 정책을 펴는 경제 주체는?', a: ['정부', '가계', '기업', '은행'] },
+            { s: '사회', q: '일정한 가격 수준에서 소비자가 상품을 구매하고자 하는 욕구를 무엇이라 하는가?', a: ['수요', '공급', '균형 가격', '잉여'] },
+            { s: '사회', q: '일정한 가격 수준에서 판매자가 상품을 판매하고자 하는 욕구를 무엇이라 하는가?', a: ['공급', '수요', '소비', '저축'] },
+            { s: '사회', q: '시장에서 수요량과 공급량이 일치할 때 결정되는 가격을 무엇이라고 하는가?', a: ['균형 가격(시장 가격)', '최고 가격', '최저 가격', '독점 가격'] },
+            { s: '사회', q: '다른 조건이 일정할 때, 상품의 가격이 오르면 수요량은 어떻게 변하는가?', a: ['감소한다', '증가한다', '변하지 않는다', '두 배가 된다'] },
+            { s: '사회', q: '다른 조건이 일정할 때, 상품의 가격이 오르면 공급량은 어떻게 변하는가?', a: ['증가한다', '감소한다', '변하지 않는다', '0이 된다'] },
+            { s: '사회', q: '시장에서 수요량보다 공급량이 많아 팔리지 않고 남는 현상을 무엇이라 하는가?', a: ['초과 공급', '초과 수요', '시장 균형', '품귀 현상'] },
+            { s: '사회', q: '시장에서 공급량보다 수요량이 많아 물건이 부족해지는 현상을 무엇이라 하는가?', a: ['초과 수요', '초과 공급', '시장 균형', '재고 누적'] },
+            { s: '과학', q: '지구에서 지각과 맨틀의 경계면을 발견한 과학자의 이름을 딴 경계면은?', a: ['모호로비치치 불연속면(모호면)', '구텐베르크면', '레만면', '대기권 계면'] },
+            { s: '과학', q: '지구 내부 구조 중 부피가 가장 큰 층은 어디인가?', a: ['맨틀', '지각', '외핵', '내핵'] },
+            { s: '과학', q: '지구 내부 구조 중 액체 상태로 추정되는 층은 어디인가?', a: ['외핵', '내핵', '맨틀', '대륙 지각'] },
+            { s: '과학', q: '화강암과 현무암처럼 마그마가 식어서 만들어진 암석을 무엇이라 하는가?', a: ['화성암', '퇴적암', '변성암', '석회암'] },
+            { s: '과학', q: '광물의 고유한 색을 알아보기 위해 초벌구이 자기판에 긁었을 때 나타나는 가루의 색은?', a: ['조흔색', '겉보기색', '불꽃 반응색', '결정형'] },
+            { s: '과학', q: '물체에 작용하는 모든 힘을 합쳤을 때 0이 되어 운동 상태가 변하지 않는 상태는?', a: ['힘의 평형', '마찰력 증가', '자유 낙하', '가속도 운동'] },
+            { s: '과학', q: '용수철이 늘어난 길이는 용수철에 작용한 힘의 크기에 비례한다는 원리를 이용한 도구는?', a: ['용수철저울', '윗접시저울', '양팔저울', '온도계'] },
+            { s: '과학', q: '생물을 분류하는 가장 기본적인 단위는 무엇인가?', a: ['종', '속', '과', '계'] },
+            { s: '과학', q: '식물 세포에는 있지만 동물 세포에는 없는 세포 소기관 두 가지는?', a: ['세포벽과 엽록체', '핵과 세포막', '미토콘드리아와 핵', '세포막과 세포질'] },
+            { s: '과학', q: '빛의 삼원색을 모두 같은 비율로 합치면 어떤 색의 빛이 되는가?', a: ['흰색', '검은색', '노란색', '보라색'] },
+            { s: '수학', q: '1보다 큰 자연수 중에서 1과 자기 자신만을 약수로 가지는 수를 무엇이라 하는가?', a: ['소수', '합성수', '음수', '무리수'] },
+            { s: '수학', q: '다음 중 소수이면서 동시에 짝수인 유일한 자연수는?', a: ['2', '1', '4', '0'] },
+            { s: '수학', q: '두 자연수의 공약수가 1뿐일 때, 이 두 수의 관계를 무엇이라고 하는가?', a: ['서로소', '최대공약수', '최소공배수', '배수'] },
+            { s: '수학', q: '(-3) × (-4) + (-2) 의 계산 결과는 얼마인가?', a: ['10', '-14', '14', '-10'] },
+            { s: '수학', q: '일차방정식 3x - 5 = 10 의 해 x의 값은 얼마인가?', a: ['5', '3', '-5', '15'] },
+            { s: '수학', q: '좌표평면 위의 점 P(-3, 4)는 제 몇 사분면 위의 점인가?', a: ['제2사분면', '제1사분면', '제3사분면', '제4사분면'] },
+            { s: '수학', q: 'x의 값이 2배, 3배, 4배로 변함에 따라 y의 값도 2배, 3배, 4배로 변하는 관계는?', a: ['정비례', '반비례', '일차부등식', '상수함수'] },
+            { s: '수학', q: '삼각형의 세 내각의 크기의 합은 몇 도인가?', a: ['180°', '360°', '90°', '270°'] },
+            { s: '수학', q: '정오각형의 한 내각의 크기는 몇 도인가?', a: ['108°', '120°', '90°', '135°'] },
+            { s: '수학', q: '반지름의 길이가 4cm인 원의 넓이는 얼마인가?', a: ['16π cm²', '8π cm²', '4π cm²', '32π cm²'] },
+            { s: '영어', q: '다음 중 be동사 짝짓기가 올바르게 연결된 것은?', a: ['They are students.', 'She am a teacher.', 'I is happy.', 'We is friends.'] },
+            { s: '영어', q: '"그는 매일 축구를 한다"를 영어로 바르게 옮긴 문장은?', a: ['He plays soccer every day.', 'He play soccer every day.', 'He playing soccer every day.', 'He is play soccer every day.'] },
+            { s: '영어', q: '"나는 어제 영화를 보았다"의 과거형 동사로 알맞은 것은? (I ____ a movie yesterday.)', a: ['watched', 'watch', 'watches', 'watching'] },
+            { s: '영어', q: '다음 중 셀 수 없는 명사(불가산 명사)로만 짝지어진 것은?', a: ['water, money', 'apple, book', 'desk, chair', 'dog, cat'] },
+            { s: '영어', q: '"책상 위에 사과 한 개가 있다"를 영어로 바르게 표현한 것은?', a: ['There is an apple on the desk.', 'There are an apple on the desk.', 'There is a apple on the desk.', 'There have an apple on the desk.'] },
+            { s: '영어', q: '다음 중 영어 단어와 우리말 뜻이 잘못 연결된 것은?', a: ['library - 서점', 'environment - 환경', 'culture - 문화', 'volunteer - 자원봉사자'] },
+            { s: '영어', q: '"너는 수영을 할 수 있니?"라는 질문에 "응, 할 수 있어."라고 대답할 때 알맞은 표현은?', a: ['Yes, I can.', 'Yes, I do.', 'Yes, I am.', 'Yes, I did.'] },
+            { s: '영어', q: '다음 중 형용사의 비교급 형태가 바르게 짝지어진 것은?', a: ['good - better', 'big - biger', 'happy - happyer', 'tall - more tall'] },
+            { s: '영어', q: '"지금 몇 시니?"를 영어로 묻는 가장 자연스러운 표현은?', a: ['What time is it now?', 'How old are you?', 'Where are you from?', 'What day is it today?'] },
+            { s: '영어', q: '다음 중 명령문 "조용히 해라!"를 영어로 바르게 쓴 것은?', a: ['Be quiet!', 'Are quiet!', 'Is quiet!', 'Being quiet!'] }
+        ];
 
         const appState = {
             role: null,
             roomCode: null,
             nickname: '선생님',
-            balance: 500,
+            balance: 300,
+            totalDonated: 0,
+            isSubscribed: false,
             topDonator: { name: '', amount: 0 },
             localStream: null,
             isWhiteboard: false,
             donateType: 'text',
             selectedEmoji: '🎉',
             donateImageBase64: null,
-            streamTimer: null
+            streamTimer: null,
+            consecutiveChatCount: 0,
+            spamLockUntil: 0,
+            spamTimerInterval: null,
+            currentQuiz: null,
+            quizAnswered: false,
+            bgmInterval: null
         };
 
         function showToast(msg, isError = false) {
@@ -364,7 +635,75 @@
             toast.className = `fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold ${isError ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`;
             icon.className = isError ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check';
             toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 3500);
+            setTimeout(() => toast.classList.add('hidden'), 3200);
+        }
+
+        function updateBalanceUI() {
+            const el = document.getElementById('studentBalanceText');
+            if (el) el.innerText = `${appState.balance} pt`;
+        }
+
+        function updateUnlockBadgeUI() {
+            const badge = document.getElementById('unlockLevelBadge');
+            if (badge) badge.innerText = `누적후원 ${appState.totalDonated}pt`;
+            renderStickerGrid();
+        }
+
+        let audioCtx = null;
+        function playBgmEngine(mode) {
+            if (appState.bgmInterval) {
+                clearInterval(appState.bgmInterval);
+                appState.bgmInterval = null;
+            }
+            const badge = document.getElementById('bgmBadge');
+            const nameText = document.getElementById('bgmNameText');
+            if (!mode || mode === 'none') {
+                badge.classList.add('hidden');
+                return;
+            }
+
+            const titles = {
+                happy: '🎵 신나는 수업 BGM',
+                lofi: '☕ 집중 공부 로파이',
+                quiz: '⚡ 두근두근 퀴즈쇼 BGM'
+            };
+            nameText.innerText = titles[mode] || 'BGM 재생 중';
+            badge.classList.remove('hidden');
+
+            const patterns = {
+                happy: { notes: [261.63, 329.63, 392.00, 523.25, 392.00, 329.63], speed: 320, type: 'triangle' },
+                lofi: { notes: [220.00, 261.63, 329.63, 293.66, 246.94, 196.00], speed: 600, type: 'sine' },
+                quiz: { notes: [146.83, 146.83, 174.61, 196.00, 146.83, 220.00], speed: 240, type: 'square' }
+            };
+            const p = patterns[mode];
+            if (!p) return;
+
+            let step = 0;
+            appState.bgmInterval = setInterval(() => {
+                try {
+                    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = p.type;
+                    osc.frequency.setValueAtTime(p.notes[step % p.notes.length], audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (p.speed / 1000));
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + (p.speed / 1000));
+                    step++;
+                } catch {}
+            }, p.speed);
+        }
+
+        function handleTeacherBgmChange() {
+            const bgm = document.getElementById('bgmSelect').value;
+            playBgmEngine(bgm);
+            if (socket && appState.roomCode) {
+                socket.emit('change_bgm', { roomCode: appState.roomCode, bgm });
+            }
         }
 
         function switchTab(role) {
@@ -379,58 +718,78 @@
             document.getElementById('studentForm').classList.toggle('hidden', isTeacher);
         }
 
-        function enterStudioUI(roomCode, title, isTeacher) {
+        function enterStudioUI(roomCode, title, isTeacher, subscribers = 124, likes = 0) {
             document.getElementById('lobbyView').classList.add('hidden');
             document.getElementById('studioView').classList.remove('hidden');
             document.getElementById('headerActions').classList.remove('hidden');
             document.getElementById('liveBadge').classList.remove('hidden');
             document.getElementById('displayRoomCode').innerText = roomCode;
             document.getElementById('headerSubtitle').innerText = title;
+            document.getElementById('subCountText').innerText = subscribers;
+            document.getElementById('likeCountText').innerText = likes;
 
             if (isTeacher) {
                 document.getElementById('teacherControls').classList.remove('hidden');
                 document.getElementById('studentControls').classList.add('hidden');
+                appState.totalDonated = 9999;
             } else {
                 document.getElementById('teacherControls').classList.add('hidden');
                 document.getElementById('studentControls').classList.remove('hidden');
-                document.getElementById('studentBalanceText').innerText = `${appState.balance} pt`;
+                updateBalanceUI();
             }
+            updateUnlockBadgeUI();
         }
 
-        // Socket.IO 서버 이벤트 수신
         if (socket) {
             socket.on('connect', () => {
-                document.getElementById('connectionBadge').innerText = '서버 연결됨';
-                document.getElementById('connectionBadge').className = 'text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full';
+                document.getElementById('connectionBadge').innerText = '연결됨';
+                const dot = document.getElementById('lobbyStatusDot');
+                const txt = document.getElementById('lobbyStatusText');
+                if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+                if (txt) {
+                    txt.className = 'text-emerald-400 font-bold';
+                    txt.innerText = '실시간 서버 연결 완료! 바로 시작할 수 있습니다.';
+                }
             });
 
             socket.on('disconnect', () => {
-                document.getElementById('connectionBadge').innerText = '재연결 중...';
-                document.getElementById('connectionBadge').className = 'text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full';
+                const dot = document.getElementById('lobbyStatusDot');
+                const txt = document.getElementById('lobbyStatusText');
+                if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping';
+                if (txt) {
+                    txt.className = 'text-slate-400 font-bold';
+                    txt.innerText = '서버 다시 연결 중...';
+                }
             });
 
-            socket.on('room_created', ({ roomCode, title }) => {
-                enterStudioUI(roomCode, title, true);
-                showToast(`라이브 방 개설 완료! 참여 코드: ${roomCode}`);
+            socket.on('room_created', ({ roomCode, title, subscribers, likes }) => {
+                enterStudioUI(roomCode, title, true, subscribers, likes);
+                showToast(`라이브 방 개설 완료! 코드: ${roomCode}`);
             });
 
-            socket.on('join_error', (msg) => {
-                showToast(msg, true);
-            });
+            socket.on('join_error', (msg) => showToast(msg, true));
 
-            socket.on('join_success', ({ roomCode, title, latestNotice, latestFrame, history }) => {
-                enterStudioUI(roomCode, title, false);
-                showToast('수업에 입장했습니다! (500pt 지급)');
+            socket.on('join_success', ({ roomCode, title, subscribers, likes, bgm, latestNotice, latestFrame, history }) => {
+                enterStudioUI(roomCode, title, false, subscribers, likes);
+                showToast('수업에 입장했습니다! (기본 300pt 지급)');
+                if (bgm && bgm !== 'none') playBgmEngine(bgm);
                 if (latestNotice) {
                     document.getElementById('noticeBannerText').innerText = latestNotice;
                     document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
                 }
-                if (latestFrame) {
-                    renderRemoteFrame(latestFrame);
-                }
+                if (latestFrame) renderRemoteFrame(latestFrame);
                 if (Array.isArray(history)) {
                     history.forEach(ev => processIncomingEvent(ev, true));
                 }
+            });
+
+            socket.on('stats_update', ({ subscribers, likes }) => {
+                document.getElementById('subCountText').innerText = subscribers;
+                document.getElementById('likeCountText').innerText = likes;
+            });
+
+            socket.on('bgm_update', ({ bgm }) => {
+                if (appState.role === 'student') playBgmEngine(bgm);
             });
 
             socket.on('system_message', (msg) => {
@@ -438,9 +797,7 @@
             });
 
             socket.on('stream_frame', ({ frame }) => {
-                if (appState.role === 'student') {
-                    renderRemoteFrame(frame);
-                }
+                if (appState.role === 'student') renderRemoteFrame(frame);
             });
 
             socket.on('live_event', (payload) => {
@@ -448,43 +805,486 @@
             });
         }
 
-        // 1. 선생님 방 개설
         function handleStartTeacher(e) {
             e.preventDefault();
-            if (!socket || !socket.connected) {
-                showToast('서버와 연결 중입니다. 잠시 후 다시 눌러주세요.', true);
-                return;
-            }
+            if (!socket || !socket.connected) return showToast('아직 서버가 깨어나는 중입니다. 아래 초록불이 켜지면 눌러주세요!', true);
             const name = document.getElementById('teacherName').value.trim() || '선생님';
             const title = document.getElementById('teacherRoomTitle').value.trim() || '실시간 라이브 수업';
             const roomCode = String(Math.floor(100000 + Math.random() * 900000));
-
             appState.role = 'teacher';
             appState.nickname = name;
             appState.roomCode = roomCode;
-
             socket.emit('create_room', { roomCode, teacherName: name, title });
         }
 
-        // 2. 학생 방 입장
         function handleJoinStudent(e) {
             e.preventDefault();
-            if (!socket || !socket.connected) {
-                showToast('서버와 연결 중입니다. 잠시 후 다시 눌러주세요.', true);
-                return;
-            }
+            if (!socket || !socket.connected) return showToast('아직 서버가 깨어나는 중입니다. 아래 초록불이 켜지면 눌러주세요!', true);
             const nickname = document.getElementById('studentNickname').value.trim();
             const roomCode = document.getElementById('joinRoomCode').value.trim();
-            if (!nickname || roomCode.length !== 6) {
-                showToast('닉네임과 6자리 참여 코드를 입력해 주세요.', true);
-                return;
-            }
-
+            if (!nickname || roomCode.length !== 6) return showToast('닉네임과 6자리 참여 코드를 입력하세요.', true);
             appState.role = 'student';
             appState.nickname = nickname;
             appState.roomCode = roomCode;
-
             socket.emit('join_room', { roomCode, nickname });
+        }
+
+        function handleToggleSubscribe() {
+            appState.isSubscribed = !appState.isSubscribed;
+            const btn = document.getElementById('btnSubscribe');
+            if (appState.isSubscribed) {
+                btn.className = 'bg-slate-700 text-slate-200 text-xs font-black px-3 py-2 rounded-xl transition flex items-center gap-1';
+                btn.innerHTML = '<i class="fa-solid fa-check"></i><span>구독중</span>';
+                appState.balance += 50;
+                updateBalanceUI();
+                showToast('구독 보너스 +50pt 지급!');
+            } else {
+                btn.className = 'bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3 py-2 rounded-xl transition flex items-center gap-1';
+                btn.innerHTML = '<i class="fa-solid fa-bell"></i><span>구독</span>';
+            }
+            if (socket) {
+                socket.emit('toggle_subscribe', {
+                    roomCode: appState.roomCode,
+                    subscribed: appState.isSubscribed,
+                    nickname: appState.nickname
+                });
+            }
+        }
+
+        function handleSendLike() {
+            if (!socket) return;
+            socket.emit('add_like', { roomCode: appState.roomCode });
+        }
+
+        function checkAntiSpam() {
+            const now = Date.now();
+            if (now < appState.spamLockUntil) {
+                return false;
+            }
+            appState.consecutiveChatCount += 1;
+            if (appState.consecutiveChatCount >= 6) {
+                appState.consecutiveChatCount = 0;
+                appState.spamLockUntil = now + 9000;
+                startSpamLockCountdown();
+                return false;
+            }
+            return true;
+        }
+
+        function startSpamLockCountdown() {
+            const bar = document.getElementById('spamWarningBar');
+            const countSpan = document.getElementById('spamCountdown');
+            const input = document.getElementById('chatInput');
+            const btn = document.getElementById('btnChatSubmit');
+
+            bar.classList.remove('hidden');
+            input.disabled = true;
+            btn.disabled = true;
+
+            if (appState.spamTimerInterval) clearInterval(appState.spamTimerInterval);
+            appState.spamTimerInterval = setInterval(() => {
+                const remain = Math.ceil((appState.spamLockUntil - Date.now()) / 1000);
+                if (remain <= 0) {
+                    clearInterval(appState.spamTimerInterval);
+                    bar.classList.add('hidden');
+                    input.disabled = false;
+                    btn.disabled = false;
+                    input.focus();
+                } else {
+                    countSpan.innerText = remain;
+                }
+            }, 250);
+        }
+
+        function toggleStickerDrawer() {
+            const drawer = document.getElementById('stickerDrawer');
+            drawer.classList.toggle('hidden');
+            renderStickerGrid();
+        }
+
+        function renderStickerGrid() {
+            const grid = document.getElementById('stickerGrid');
+            if (!grid) return;
+            grid.innerHTML = COMMENT_STICKERS.map(st => {
+                const unlocked = appState.totalDonated >= st.req;
+                return `
+                    <button type="button" onclick="sendChatSticker('${st.id}')"
+                        class="p-2 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 ${
+                            unlocked
+                                ? 'bg-slate-900 hover:bg-slate-800 border-slate-700 cursor-pointer'
+                                : 'bg-slate-950/60 border-slate-800/60 opacity-50 cursor-not-allowed'
+                        }">
+                        <span class="text-2xl ${st.type === 'gif' && unlocked ? 'gif-anim' : ''}">${unlocked ? st.icon : '🔒'}</span>
+                        <span class="text-[9px] font-bold ${unlocked ? 'text-slate-300' : 'text-amber-400'}">${st.label}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function sendChatSticker(stickerId) {
+            const st = COMMENT_STICKERS.find(item => item.id === stickerId);
+            if (!st) return;
+            if (appState.totalDonated < st.req) {
+                showToast(`누적 후원 ${st.req}pt 달성 시 해금되는 전용 스티커입니다!`, true);
+                return;
+            }
+            if (!checkAntiSpam()) {
+                showToast('연속 6회 입력으로 9초간 도배 방지 쿨타임이 적용되었습니다!', true);
+                return;
+            }
+            if (!socket) return;
+            socket.emit('live_event', {
+                roomCode: appState.roomCode,
+                type: 'chat',
+                sender: appState.nickname,
+                role: appState.role,
+                stickerType: st.type,
+                stickerIcon: st.icon,
+                message: st.label,
+                time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+            });
+            document.getElementById('stickerDrawer').classList.add('hidden');
+        }
+
+        function handleSendChat(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text || !socket) return;
+
+            if (!checkAntiSpam()) {
+                showToast('연속 6회 입력으로 9초간 채팅이 제한됩니다!', true);
+                return;
+            }
+
+            input.value = '';
+            socket.emit('live_event', {
+                roomCode: appState.roomCode,
+                type: 'chat',
+                sender: appState.nickname,
+                role: appState.role,
+                message: text,
+                time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+            });
+        }
+
+        function openEarnModal() {
+            document.getElementById('earnModal').classList.remove('hidden');
+            switchEarnTab('quiz');
+        }
+
+        function switchEarnTab(tab) {
+            const isQuiz = tab === 'quiz';
+            document.getElementById('eTabQuiz').className = isQuiz
+                ? 'py-2.5 rounded-xl bg-indigo-600 text-white'
+                : 'py-2.5 rounded-xl text-slate-400';
+            document.getElementById('eTabRps').className = !isQuiz
+                ? 'py-2.5 rounded-xl bg-emerald-600 text-white'
+                : 'py-2.5 rounded-xl text-slate-400';
+            document.getElementById('earnQuizSection').classList.toggle('hidden', !isQuiz);
+            document.getElementById('earnRpsSection').classList.toggle('hidden', isQuiz);
+            if (isQuiz && !appState.currentQuiz) loadNextQuiz();
+        }
+
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        function loadNextQuiz() {
+            const filter = document.getElementById('quizSubjectFilter').value;
+            const pool = filter === 'all' ? QUIZ_BANK : QUIZ_BANK.filter(item => item.s === filter);
+            const randomItem = pool[Math.floor(Math.random() * pool.length)];
+
+            const correctAnswer = randomItem.a[0];
+            const shuffledOptions = shuffleArray(randomItem.a);
+
+            appState.currentQuiz = {
+                subject: randomItem.s,
+                question: randomItem.q,
+                correct: correctAnswer,
+                options: shuffledOptions
+            };
+            appState.quizAnswered = false;
+
+            document.getElementById('quizTag').innerText = randomItem.s === '사회' ? '🌍 비상 사회 1학년 2학기' : `📘 중1 ${randomItem.s}`;
+            document.getElementById('quizQuestionText').innerText = randomItem.q;
+            document.getElementById('quizFeedbackBox').classList.add('hidden');
+
+            const box = document.getElementById('quizOptionsBox');
+            box.innerHTML = shuffledOptions.map((opt, idx) => `
+                <button type="button" onclick="submitQuizAnswer(${idx})"
+                    class="quiz-opt-btn w-full text-left bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs md:text-sm font-bold text-slate-200 transition flex items-center gap-2.5">
+                    <span class="w-6 h-6 rounded-lg bg-slate-800 text-indigo-400 flex items-center justify-center text-xs font-black">${idx + 1}</span>
+                    <span>${escapeHtml(opt)}</span>
+                </button>
+            `).join('');
+        }
+
+        function submitQuizAnswer(selectedIdx) {
+            if (appState.quizAnswered || !appState.currentQuiz) return;
+            appState.quizAnswered = true;
+
+            const chosen = appState.currentQuiz.options[selectedIdx];
+            const isCorrect = chosen === appState.currentQuiz.correct;
+            const fb = document.getElementById('quizFeedbackBox');
+            const btns = document.querySelectorAll('.quiz-opt-btn');
+
+            btns.forEach((b, idx) => {
+                const text = appState.currentQuiz.options[idx];
+                if (text === appState.currentQuiz.correct) {
+                    b.className = 'w-full text-left bg-emerald-600/25 border border-emerald-500 rounded-xl px-4 py-3 text-xs md:text-sm font-bold text-emerald-300 flex items-center gap-2.5';
+                } else if (idx === selectedIdx && !isCorrect) {
+                    b.className = 'w-full text-left bg-red-600/25 border border-red-500 rounded-xl px-4 py-3 text-xs md:text-sm font-bold text-red-300 flex items-center gap-2.5';
+                }
+            });
+
+            fb.classList.remove('hidden');
+            if (isCorrect) {
+                appState.balance += 100;
+                updateBalanceUI();
+                fb.className = 'p-3 rounded-xl text-xs font-black text-center bg-emerald-600/20 text-emerald-300 border border-emerald-500/40';
+                fb.innerText = '🎉 정답입니다! +100 pt 획득! (다음 랜덤 문제를 뽑아 계속 도전하세요)';
+            } else {
+                fb.className = 'p-3 rounded-xl text-xs font-black text-center bg-red-600/20 text-red-300 border border-red-500/40';
+                fb.innerText = `❌ 아쉽네요! 정답은 "${appState.currentQuiz.correct}" 입니다.`;
+            }
+        }
+
+        function playRps(userChoice) {
+            const hands = ['가위', '바위', '보'];
+            const emojis = { '가위': '✌️', '바위': '✊', '보': '🖐️' };
+            const botChoice = hands[Math.floor(Math.random() * 3)];
+
+            document.getElementById('rpsMyHand').innerText = emojis[userChoice];
+            document.getElementById('rpsBotHand').innerText = emojis[botChoice];
+
+            const resText = document.getElementById('rpsResultText');
+            if (userChoice === botChoice) {
+                appState.balance += 30;
+                updateBalanceUI();
+                resText.className = 'text-sm font-black text-amber-400';
+                resText.innerText = `🤝 비겼습니다! 참가 보너스 +30 pt 획득!`;
+            } else if (
+                (userChoice === '가위' && botChoice === '보') ||
+                (userChoice === '바위' && botChoice === '가위') ||
+                (userChoice === '보' && botChoice === '바위')
+            ) {
+                appState.balance += 120;
+                updateBalanceUI();
+                resText.className = 'text-sm font-black text-emerald-400';
+                resText.innerText = `🏆 승리했습니다! 대박 보너스 +120 pt 획득!`;
+            } else {
+                resText.className = 'text-sm font-black text-red-400';
+                resText.innerText = `😢 아쉽게 졌습니다! 다시 한 번 도전해 보세요!`;
+            }
+        }
+
+        function openDonateModal() {
+            document.getElementById('donateModal').classList.remove('hidden');
+        }
+
+        function selectDonateType(type) {
+            appState.donateType = type;
+            document.getElementById('dTabText').className = type === 'text' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
+            document.getElementById('dTabEmoji').className = type === 'emoji' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
+            document.getElementById('dTabImage').className = type === 'image' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
+            document.getElementById('dTabVideo').className = type === 'video' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
+
+            document.getElementById('donateEmojiArea').classList.toggle('hidden', type !== 'emoji');
+            document.getElementById('donateImageArea').classList.toggle('hidden', type !== 'image');
+            document.getElementById('donateVideoArea').classList.toggle('hidden', type !== 'video');
+        }
+
+        function pickDonateEmoji(emoji) {
+            appState.selectedEmoji = emoji;
+            document.querySelectorAll('.emoji-opt').forEach(btn => {
+                btn.className = btn.innerText.trim() === emoji
+                    ? 'emoji-opt p-1.5 rounded-lg bg-amber-500/30 border border-amber-400'
+                    : 'emoji-opt p-1.5 rounded-lg hover:bg-slate-800';
+            });
+        }
+
+        function previewDonateImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => { appState.donateImageBase64 = reader.result; };
+            reader.readAsDataURL(file);
+        }
+
+        function extractYoutubeId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function handleSendDonation() {
+            const amount = parseInt(document.getElementById('donateAmount').value, 10);
+            if (appState.balance < amount) {
+                showToast('포인트가 부족합니다! "포인트 얻기"에서 퀴즈나 가위바위보로 모아보세요!', true);
+                return;
+            }
+            const message = document.getElementById('donateMessage').value.trim() || '선생님 응원합니다!';
+            const tts = document.getElementById('donateTts').checked;
+            let mediaData = null;
+
+            if (appState.donateType === 'emoji') {
+                mediaData = appState.selectedEmoji;
+            } else if (appState.donateType === 'image') {
+                if (!appState.donateImageBase64) return showToast('후원할 그림/사진을 선택해 주세요.', true);
+                mediaData = appState.donateImageBase64;
+            } else if (appState.donateType === 'video') {
+                const ytId = extractYoutubeId(document.getElementById('donateVideoUrl').value.trim());
+                if (!ytId) return showToast('올바른 유튜브 영상 주소를 입력해 주세요.', true);
+                mediaData = ytId;
+            }
+
+            appState.balance -= amount;
+            appState.totalDonated += amount;
+            updateBalanceUI();
+            updateUnlockBadgeUI();
+
+            document.getElementById('donateModal').classList.add('hidden');
+            document.getElementById('donateMessage').value = '';
+
+            if (socket) {
+                socket.emit('live_event', {
+                    roomCode: appState.roomCode,
+                    type: 'donation',
+                    sender: appState.nickname,
+                    amount,
+                    donateType: appState.donateType,
+                    mediaData,
+                    message,
+                    tts
+                });
+            }
+        }
+
+        function processIncomingEvent(data, isHistory = false) {
+            const chatBox = document.getElementById('chatBox');
+
+            if (data.type === 'system') {
+                const div = document.createElement('div');
+                div.className = 'text-center text-[11px] text-indigo-300 bg-indigo-500/10 rounded-lg py-1';
+                div.innerText = data.message;
+                chatBox.appendChild(div);
+            } else if (data.type === 'chat') {
+                const isTeacher = data.role === 'teacher';
+                const div = document.createElement('div');
+                div.className = `p-2.5 rounded-2xl ${isTeacher ? 'bg-indigo-600/20 border border-indigo-500/40' : 'bg-slate-800/70'}`;
+                let bodyHtml = `<p class="text-slate-100 break-words leading-relaxed">${escapeHtml(data.message)}</p>`;
+                if (data.stickerIcon) {
+                    bodyHtml = `
+                        <div class="flex items-center gap-2 py-1">
+                            <span class="text-3xl ${data.stickerType === 'gif' ? 'gif-anim' : ''}">${data.stickerIcon}</span>
+                            <span class="text-[11px] font-bold text-amber-300">[전용 스티커] ${escapeHtml(data.message)}</span>
+                        </div>
+                    `;
+                }
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold ${isTeacher ? 'text-indigo-400' : 'text-emerald-400'}">${isTeacher ? '👨‍🏫 ' : ''}${escapeHtml(data.sender)}</span>
+                        <span class="text-[10px] text-slate-500">${data.time || ''}</span>
+                    </div>
+                    ${bodyHtml}
+                `;
+                chatBox.appendChild(div);
+            } else if (data.type === 'notice') {
+                document.getElementById('noticeBannerText').innerText = data.message;
+                document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
+                const div = document.createElement('div');
+                div.className = 'p-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 font-bold';
+                div.innerHTML = `📢 [공지] ${escapeHtml(data.message)}`;
+                chatBox.appendChild(div);
+            } else if (data.type === 'heart' && !isHistory) {
+                spawnFloatingHeart();
+            } else if (data.type === 'donation') {
+                if (data.amount >= appState.topDonator.amount) {
+                    appState.topDonator = { name: data.sender, amount: data.amount };
+                    document.getElementById('topDonatorText').innerText = `${data.sender} (${data.amount}pt)`;
+                    document.getElementById('topDonatorBadge').classList.remove('hidden');
+                }
+                const div = document.createElement('div');
+                div.className = 'p-3 rounded-2xl bg-gradient-to-r from-amber-500/25 to-orange-500/25 border border-amber-400/60 space-y-1.5';
+                let chatMediaHtml = '';
+                if (data.donateType === 'emoji' && data.mediaData) {
+                    chatMediaHtml = `<div class="text-4xl text-center py-1">${data.mediaData}</div>`;
+                } else if (data.donateType === 'image' && data.mediaData) {
+                    chatMediaHtml = `<img src="${data.mediaData}" class="max-h-32 rounded-xl mx-auto">`;
+                } else if (data.donateType === 'video' && data.mediaData) {
+                    chatMediaHtml = `<div class="text-[11px] text-amber-300 font-bold"><i class="fa-brands fa-youtube text-red-500 mr-1"></i>유튜브 영상 후원</div>`;
+                }
+                div.innerHTML = `
+                    <div class="flex items-center justify-between text-amber-300 font-black">
+                        <span>🎁 ${escapeHtml(data.sender)}님의 후원!</span>
+                        <span>${data.amount} pt</span>
+                    </div>
+                    ${chatMediaHtml}
+                    <p class="text-white font-bold">${escapeHtml(data.message)}</p>
+                `;
+                chatBox.appendChild(div);
+                if (!isHistory) triggerDonationOverlay(data);
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function triggerDonationOverlay(data) {
+            const overlay = document.getElementById('donationOverlay');
+            const mediaBox = document.getElementById('overlayMediaContainer');
+            document.getElementById('overlayDonorName').innerText = data.sender;
+            document.getElementById('overlayDonateAmount').innerText = `${data.amount}pt`;
+            document.getElementById('overlayDonateMsg').innerText = data.message;
+            mediaBox.innerHTML = '';
+
+            let duration = 5000;
+            if (data.donateType === 'emoji' && data.mediaData) {
+                mediaBox.innerHTML = `<div class="text-7xl md:text-8xl py-2 animate-bounce">${data.mediaData}</div>`;
+            } else if (data.donateType === 'image' && data.mediaData) {
+                mediaBox.innerHTML = `<img src="${data.mediaData}" class="max-h-44 rounded-2xl border border-amber-400/50">`;
+            } else if (data.donateType === 'video' && data.mediaData) {
+                duration = 10000;
+                mediaBox.innerHTML = `<iframe class="w-72 h-40 rounded-2xl border border-amber-400/50" src="https://www.youtube.com/embed/${data.mediaData}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+            }
+
+            overlay.classList.remove('hidden');
+
+            if (data.tts && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(`${data.sender}님이 ${data.amount}포인트 후원하셨습니다! ${data.message}`);
+                utter.lang = 'ko-KR';
+                utter.rate = 1.05;
+                window.speechSynthesis.speak(utter);
+            }
+
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                mediaBox.innerHTML = '';
+            }, duration);
+        }
+
+        function spawnFloatingHeart() {
+            const stage = document.getElementById('stageContainer');
+            const heart = document.createElement('div');
+            heart.className = 'heart-float text-2xl md:text-3xl';
+            heart.innerText = ['❤️', '💖', '👍', '🧡'][Math.floor(Math.random() * 4)];
+            heart.style.left = `${15 + Math.random() * 70}%`;
+            stage.appendChild(heart);
+            setTimeout(() => heart.remove(), 2000);
+        }
+
+        function submitNotice() {
+            const input = document.getElementById('noticeInput');
+            const text = input.value.trim();
+            if (!text || !socket) return;
+            input.value = '';
+            document.getElementById('noticeModal').classList.add('hidden');
+            socket.emit('live_event', { roomCode: appState.roomCode, type: 'notice', message: text });
         }
 
         function renderRemoteFrame(frameDataUrl) {
@@ -505,7 +1305,6 @@
             img.src = frameDataUrl;
         }
 
-        // 3. 선생님 화면 공유 / 카메라 / 칠판 송출
         async function toggleScreenShare() {
             try {
                 stopAllMedia();
@@ -638,231 +1437,6 @@
             }
         }
 
-        // 4. 채팅, 공지, 후원, 하트 전송
-        function handleSendChat(e) {
-            e.preventDefault();
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if (!text || !socket) return;
-            input.value = '';
-
-            socket.emit('live_event', {
-                roomCode: appState.roomCode,
-                type: 'chat',
-                sender: appState.nickname,
-                role: appState.role,
-                message: text,
-                time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-            });
-        }
-
-        function submitNotice() {
-            const input = document.getElementById('noticeInput');
-            const text = input.value.trim();
-            if (!text || !socket) return;
-            input.value = '';
-            document.getElementById('noticeModal').classList.add('hidden');
-
-            socket.emit('live_event', {
-                roomCode: appState.roomCode,
-                type: 'notice',
-                message: text
-            });
-        }
-
-        function sendHeartReaction() {
-            if (!socket) return;
-            socket.emit('live_event', {
-                roomCode: appState.roomCode,
-                type: 'heart',
-                sender: appState.nickname
-            });
-        }
-
-        function selectDonateType(type) {
-            appState.donateType = type;
-            document.getElementById('dTabText').className = type === 'text' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
-            document.getElementById('dTabEmoji').className = type === 'emoji' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
-            document.getElementById('dTabImage').className = type === 'image' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
-            document.getElementById('dTabVideo').className = type === 'video' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
-
-            document.getElementById('donateEmojiArea').classList.toggle('hidden', type !== 'emoji');
-            document.getElementById('donateImageArea').classList.toggle('hidden', type !== 'image');
-            document.getElementById('donateVideoArea').classList.toggle('hidden', type !== 'video');
-        }
-
-        function pickDonateEmoji(emoji) {
-            appState.selectedEmoji = emoji;
-            document.querySelectorAll('.emoji-opt').forEach(btn => {
-                btn.className = btn.innerText.trim() === emoji
-                    ? 'emoji-opt p-1.5 rounded-lg bg-amber-500/30 border border-amber-400'
-                    : 'emoji-opt p-1.5 rounded-lg hover:bg-slate-800';
-            });
-        }
-
-        function previewDonateImage(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => { appState.donateImageBase64 = reader.result; };
-            reader.readAsDataURL(file);
-        }
-
-        function extractYoutubeId(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-        }
-
-        function handleSendDonation() {
-            const amount = parseInt(document.getElementById('donateAmount').value, 10);
-            if (appState.balance < amount) {
-                showToast('보유 포인트가 부족합니다!', true);
-                return;
-            }
-            const message = document.getElementById('donateMessage').value.trim() || '선생님 응원합니다!';
-            const tts = document.getElementById('donateTts').checked;
-            let mediaData = null;
-
-            if (appState.donateType === 'emoji') {
-                mediaData = appState.selectedEmoji;
-            } else if (appState.donateType === 'image') {
-                if (!appState.donateImageBase64) {
-                    showToast('후원할 그림/사진을 선택해 주세요.', true);
-                    return;
-                }
-                mediaData = appState.donateImageBase64;
-            } else if (appState.donateType === 'video') {
-                const ytId = extractYoutubeId(document.getElementById('donateVideoUrl').value.trim());
-                if (!ytId) {
-                    showToast('올바른 유튜브 영상 주소를 입력해 주세요.', true);
-                    return;
-                }
-                mediaData = ytId;
-            }
-
-            appState.balance -= amount;
-            document.getElementById('studentBalanceText').innerText = `${appState.balance} pt`;
-            document.getElementById('donateModal').classList.add('hidden');
-            document.getElementById('donateMessage').value = '';
-
-            if (socket) {
-                socket.emit('live_event', {
-                    roomCode: appState.roomCode,
-                    type: 'donation',
-                    sender: appState.nickname,
-                    amount,
-                    donateType: appState.donateType,
-                    mediaData,
-                    message,
-                    tts
-                });
-            }
-        }
-
-        function processIncomingEvent(data, isHistory = false) {
-            const chatBox = document.getElementById('chatBox');
-
-            if (data.type === 'system') {
-                const div = document.createElement('div');
-                div.className = 'text-center text-[11px] text-indigo-300 bg-indigo-500/10 rounded-lg py-1';
-                div.innerText = data.message;
-                chatBox.appendChild(div);
-            } else if (data.type === 'chat') {
-                const isTeacher = data.role === 'teacher';
-                const div = document.createElement('div');
-                div.className = `p-2.5 rounded-2xl ${isTeacher ? 'bg-indigo-600/20 border border-indigo-500/40' : 'bg-slate-800/70'}`;
-                div.innerHTML = `
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="font-bold ${isTeacher ? 'text-indigo-400' : 'text-emerald-400'}">${isTeacher ? '👨‍🏫 ' : ''}${escapeHtml(data.sender)}</span>
-                        <span class="text-[10px] text-slate-500">${data.time || ''}</span>
-                    </div>
-                    <p class="text-slate-100 break-words leading-relaxed">${escapeHtml(data.message)}</p>
-                `;
-                chatBox.appendChild(div);
-            } else if (data.type === 'notice') {
-                document.getElementById('noticeBannerText').innerText = data.message;
-                document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
-                const div = document.createElement('div');
-                div.className = 'p-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 font-bold';
-                div.innerHTML = `📢 [공지] ${escapeHtml(data.message)}`;
-                chatBox.appendChild(div);
-            } else if (data.type === 'heart' && !isHistory) {
-                spawnFloatingHeart();
-            } else if (data.type === 'donation') {
-                if (data.amount >= appState.topDonator.amount) {
-                    appState.topDonator = { name: data.sender, amount: data.amount };
-                    document.getElementById('topDonatorText').innerText = `${data.sender} (${data.amount}pt)`;
-                    document.getElementById('topDonatorBadge').classList.remove('hidden');
-                }
-                const div = document.createElement('div');
-                div.className = 'p-3 rounded-2xl bg-gradient-to-r from-amber-500/25 to-orange-500/25 border border-amber-400/60 space-y-1.5';
-                let chatMediaHtml = '';
-                if (data.donateType === 'emoji' && data.mediaData) {
-                    chatMediaHtml = `<div class="text-4xl text-center py-1">${data.mediaData}</div>`;
-                } else if (data.donateType === 'image' && data.mediaData) {
-                    chatMediaHtml = `<img src="${data.mediaData}" class="max-h-32 rounded-xl mx-auto">`;
-                } else if (data.donateType === 'video' && data.mediaData) {
-                    chatMediaHtml = `<div class="text-[11px] text-amber-300 font-bold"><i class="fa-brands fa-youtube text-red-500 mr-1"></i>유튜브 영상 후원</div>`;
-                }
-                div.innerHTML = `
-                    <div class="flex items-center justify-between text-amber-300 font-black">
-                        <span>🎁 ${escapeHtml(data.sender)}님의 후원!</span>
-                        <span>${data.amount} pt</span>
-                    </div>
-                    ${chatMediaHtml}
-                    <p class="text-white font-bold">${escapeHtml(data.message)}</p>
-                `;
-                chatBox.appendChild(div);
-                if (!isHistory) triggerDonationOverlay(data);
-            }
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function triggerDonationOverlay(data) {
-            const overlay = document.getElementById('donationOverlay');
-            const mediaBox = document.getElementById('overlayMediaContainer');
-            document.getElementById('overlayDonorName').innerText = data.sender;
-            document.getElementById('overlayDonateAmount').innerText = `${data.amount}pt`;
-            document.getElementById('overlayDonateMsg').innerText = data.message;
-            mediaBox.innerHTML = '';
-
-            let duration = 5000;
-            if (data.donateType === 'emoji' && data.mediaData) {
-                mediaBox.innerHTML = `<div class="text-7xl md:text-8xl py-2 animate-bounce">${data.mediaData}</div>`;
-            } else if (data.donateType === 'image' && data.mediaData) {
-                mediaBox.innerHTML = `<img src="${data.mediaData}" class="max-h-44 rounded-2xl border border-amber-400/50">`;
-            } else if (data.donateType === 'video' && data.mediaData) {
-                duration = 10000;
-                mediaBox.innerHTML = `<iframe class="w-72 h-40 rounded-2xl border border-amber-400/50" src="https://www.youtube.com/embed/${data.mediaData}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-            }
-
-            overlay.classList.remove('hidden');
-
-            if (data.tts && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utter = new SpeechSynthesisUtterance(`${data.sender}님이 ${data.amount}포인트 후원하셨습니다! ${data.message}`);
-                utter.lang = 'ko-KR';
-                utter.rate = 1.05;
-                window.speechSynthesis.speak(utter);
-            }
-
-            setTimeout(() => {
-                overlay.classList.add('hidden');
-                mediaBox.innerHTML = '';
-            }, duration);
-        }
-
-        function spawnFloatingHeart() {
-            const stage = document.getElementById('stageContainer');
-            const heart = document.createElement('div');
-            heart.className = 'heart-float text-2xl md:text-3xl';
-            heart.innerText = ['❤️', '💖', '💕', '🧡'][Math.floor(Math.random() * 4)];
-            heart.style.left = `${15 + Math.random() * 70}%`;
-            stage.appendChild(heart);
-            setTimeout(() => heart.remove(), 2000);
-        }
-
         function openShareModal() {
             const code = appState.roomCode;
             const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
@@ -893,4 +1467,3 @@
     </script>
 </body>
 </html>
-```
