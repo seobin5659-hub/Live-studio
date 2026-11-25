@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>선생님 실시간 라이브 스튜디오 PRO - Ultimate</title>
+    <title>선생님 실시간 라이브 스튜디오 ULTIMATE PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -27,107 +27,150 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
     <!-- 상단 내비게이션 바 -->
-    <header class="h-16 border-b border-slate-800 bg-slate-900/95 px-4 flex items-center justify-between sticky top-0 z-30">
+    <header class="h-16 border-b border-slate-800 bg-slate-900/95 px-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
         <div class="flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
                 <i class="fa-solid fa-tower-broadcast text-white"></i>
             </div>
             <div>
                 <h1 class="font-black text-sm text-white flex items-center gap-2">
-                    실시간 스튜디오 ULTIMATE
+                    실시간 라이브 스튜디오
                     <span id="liveBadge" class="hidden px-2 py-0.5 text-[10px] font-black bg-red-600 text-white rounded-full animate-pulse">LIVE</span>
                 </h1>
                 <p id="headerSubtitle" class="text-[11px] text-slate-400">비상 사회 1-2 및 멀티 라이브 스튜디오</p>
             </div>
         </div>
-        <div class="flex items-center gap-2">
-            <div id="headerStats" class="hidden flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl text-xs">
-                <span class="text-red-400 font-bold"><i class="fa-solid fa-bell mr-1"></i>구독 <span id="subCount">124</span></span>
-                <span class="text-slate-600">|</span>
-                <span class="text-pink-400 font-bold"><i class="fa-solid fa-thumbs-up mr-1"></i>좋아요 <span id="likeCount">0</span></span>
-                <span class="text-slate-600">|</span>
-                <span class="text-amber-400 font-bold"><i class="fa-solid fa-gift mr-1"></i>누적후원 <span id="totalDonationDisplay">0</span>pt</span>
-            </div>
-            <div class="bg-slate-800 px-3 py-1.5 rounded-xl text-xs">
-                <span class="text-slate-400">내 포인트:</span>
-                <span id="myBalance" class="font-black text-amber-400 ml-1">300 pt</span>
-            </div>
-            <button id="leaveRoomBtn" onclick="leaveLiveRoom()" class="hidden bg-red-600/80 hover:bg-red-600 text-white text-xs font-black px-3 py-1.5 rounded-xl transition">
-                <i class="fa-solid fa-right-from-bracket mr-1"></i>라이브 나가기
+
+        <div class="flex items-center gap-2.5">
+            <!-- 나가기 버튼 -->
+            <button id="leaveRoomBtn" onclick="leaveLiveRoom()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-2 rounded-xl transition border border-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span>라이브 나가기</span>
             </button>
+
+            <!-- 상단 통계 현황판 -->
+            <div id="headerStats" class="hidden items-center gap-2 bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
+                <span class="text-red-400 font-bold"><i class="fa-solid fa-bell mr-1"></i><span id="subCount">124</span></span>
+                <span class="text-slate-600">|</span>
+                <span class="text-pink-400 font-bold"><i class="fa-solid fa-thumbs-up mr-1"></i><span id="likeCount">0</span></span>
+                <span class="text-slate-600">|</span>
+                <span class="text-amber-400 font-bold"><i class="fa-solid fa-gift mr-1"></i><span id="totalDonationDisplay">0</span>pt</span>
+            </div>
+
+            <!-- 내 포인트 현황 -->
+            <div class="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5">
+                <span class="text-slate-400">내 포인트:</span>
+                <span id="myBalance" class="font-black text-amber-400">300 pt</span>
+            </div>
         </div>
     </header>
 
-    <!-- 선생님 공지 맨위 빅 배너 -->
-    <div id="pinnedNoticeBanner" class="hidden bg-amber-500/20 border-b-2 border-amber-500 px-6 py-3 flex items-center justify-between gap-4 z-20 shadow-lg">
-        <div class="flex items-center gap-3 text-amber-300 text-sm md:text-base font-black">
-            <i class="fa-solid fa-bullhorn text-amber-400 text-xl animate-bounce"></i>
-            <span id="noticeBannerText">선생님 공지사항이 여기에 크게 표시됩니다!</span>
-        </div>
-        <button onclick="document.getElementById('pinnedNoticeBanner').classList.add('hidden')" class="text-amber-400 hover:text-white text-sm font-bold bg-amber-500/30 px-3 py-1 rounded-xl">닫기</button>
+    <!-- 토스트 알림 메시지 상자 -->
+    <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold bg-emerald-600 text-white">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastText">알림 메시지</span>
     </div>
 
-    <!-- 토스트 알림 -->
-    <div id="toast" class="hidden fixed top-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold bg-emerald-600 text-white">
-        <i id="toastIcon" class="fa-solid fa-circle-check"></i>
-        <span id="toastText">알림</span>
-    </div>
+    <!-- 1. 초기 역할 선택 로비 화면 -->
+    <main id="lobbyView" class="flex-1 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
+            <div class="text-center">
+                <h2 class="text-base font-black text-white">📡 라이브 스튜디오 역할 선택</h2>
+                <p class="text-xs text-slate-400 mt-1">선생님 또는 학생 역할을 골라 수업에 참여하세요.</p>
+            </div>
 
-    <!-- 1. 라이브 방 선택 로비 화면 -->
-    <div id="lobbyView" class="flex-1 max-w-4xl w-full mx-auto p-6 flex flex-col justify-center">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div>
-                    <h2 class="text-lg font-black text-white">📡 실시간 라이브 수업 로비</h2>
-                    <p class="text-xs text-slate-400 mt-1">개설된 라이브 방송 중 골라서 입장하거나, 선생님으로 방을 개설하세요.</p>
-                </div>
-                <button onclick="openTeacherCreateModal()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black px-4 py-2.5 rounded-xl text-xs shadow-lg transition flex items-center gap-2">
-                    <i class="fa-solid fa-video"></i>
-                    <span>선생님 방 개설하기</span>
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                <button type="button" id="tabTeacher" onclick="switchLobbyRole('teacher')" class="py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition">
+                    👨‍🏫 선생님 (방 개설)
+                </button>
+                <button type="button" id="tabStudent" onclick="switchLobbyRole('student')" class="py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition">
+                    🎓 학생 (참여)
                 </button>
             </div>
 
-            <div>
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">현재 진행 중인 라이브 목록</h3>
-                <div id="liveRoomsList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <!-- 동적 생성 -->
+            <!-- 선생님 방 개설 폼 -->
+            <form id="teacherLobbyForm" onsubmit="handleStartTeacher(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">선생님 성함</label>
+                    <input type="text" id="tNameInput" value="김선생님" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-indigo-500">
                 </div>
-            </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">수업 방송 제목</label>
+                    <input type="text" id="tTitleInput" value="비상 사회 1-2학기 핵심 총정리 라이브" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-indigo-600/30 transition">
+                    라이브 방 개설하기
+                </button>
+            </form>
+
+            <!-- 학생 입장 폼 -->
+            <form id="studentLobbyForm" onsubmit="handleJoinStudent(event)" class="hidden space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">내 닉네임</label>
+                    <input type="text" id="sNicknameInput" placeholder="예: 홍길동" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">참여 코드 (선생님이 알려준 6자리)</label>
+                    <input type="text" id="sRoomCodeInput" placeholder="예: 123456" maxlength="6" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-center font-mono font-black text-emerald-400 tracking-widest text-base focus:outline-none focus:border-emerald-500">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-emerald-600/30 transition">
+                    수업 입장하기 (300pt 지급)
+                </button>
+            </form>
         </div>
-    </div>
+    </main>
 
     <!-- 2. 메인 라이브 스튜디오 화면 -->
-    <main id="studioView" class="hidden flex-1 max-w-[1550px] w-full mx-auto p-3 grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <main id="studioView" class="hidden flex-1 max-w-[1550px] w-full mx-auto p-3 md:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- 왼쪽: 영상 송출 및 제어 영역 (8칸) -->
         <div class="lg:col-span-8 flex flex-col gap-3">
-            <div class="relative aspect-video bg-slate-900 rounded-3xl border border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl">
+            <!-- 상단 공지 배너 -->
+            <div id="pinnedNoticeBanner" class="hidden bg-amber-500/15 border border-amber-500/40 rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 text-amber-300 text-xs md:text-sm font-bold">
+                    <i class="fa-solid fa-thumbtack text-amber-400"></i>
+                    <span id="noticeBannerText">선생님 공지사항이 여기에 크게 표시됩니다.</span>
+                </div>
+                <button onclick="document.getElementById('pinnedNoticeBanner').classList.add('hidden')" class="text-amber-400/70 hover:text-amber-300 text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- 메인 스테이지 / 칠판 화면 -->
+            <div id="stageContainer" class="relative aspect-video bg-slate-900 rounded-3xl border border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl">
                 <div class="text-center p-6">
                     <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500 text-2xl">
                         <i class="fa-solid fa-chalkboard-user"></i>
                     </div>
                     <p class="text-sm font-bold text-slate-300" id="studioMainTitle">선생님 라이브 방송 송출 화면</p>
-                    <p class="text-xs text-slate-500 mt-1">BGM, 퀴즈(25초 쿨타임), 룰렛(+/-), 후원 게이지(7000pt 벌칙투표)를 즐겨보세요!</p>
+                    <p class="text-xs text-slate-500 mt-1">BGM, 25초 쿨타임 퀴즈, 플러스/마이너스 룰렛, 후원 7000pt 벌칙 투표를 즐겨보세요!</p>
                 </div>
 
-                <div id="penaltyVoteContainer" class="hidden absolute top-3 left-3 right-3 bg-slate-950/90 border border-amber-500 rounded-2xl p-3 z-30 shadow-2xl">
+                <!-- 후원 게이지 7000pt 달성 시 투표 배너 -->
+                <div id="penaltyVoteContainer" class="hidden absolute top-3 left-3 right-3 bg-slate-950/95 border border-amber-500 rounded-2xl p-3 z-30 shadow-2xl">
                     <div class="flex items-center justify-between text-xs mb-2">
-                        <span class="font-black text-amber-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i>후원 게이지 7,000pt 달성! 벌칙 투표 오픈!</span>
-                        <span id="penaltyGaugeText" class="text-slate-300 font-bold">현재 7,200 / 7,000pt</span>
+                        <span class="font-black text-amber-400"><i class="fa-solid fa-crown mr-1"></i>후원 누적 7,000pt 돌파! 벌칙 투표 오픈!</span>
+                        <span id="penaltyGaugeText" class="text-slate-300 font-bold">현재 7,000 / 7,000pt</span>
                     </div>
-                    <button onclick="openPenaltyVoteModal()" class="w-full bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black py-2 rounded-xl text-xs shadow-md">
-                        🔥 50가지 벌칙 중 1개 골라서 투표하기!
+                    <button onclick="openPenaltyVoteModal()" class="w-full bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black py-2.5 rounded-xl text-xs shadow-md">
+                        🔥 50가지 벌칙 후보 중 1개 골라서 투표하기!
                     </button>
                 </div>
             </div>
 
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
+            <!-- 하단 컨트롤 바: 완벽하고 깔끔한 버튼 배치 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5">
                 <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="toggleSubscribe()" id="btnSub" class="bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3 py-2 rounded-xl transition">
-                        <i class="fa-solid fa-bell mr-1"></i>구독
+                    <button onclick="toggleSubscribe()" id="btnSub" class="bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md">
+                        <i class="fa-solid fa-bell"></i>
+                        <span>구독</span>
                     </button>
-                    <button onclick="addLike()" class="bg-pink-600/20 border border-pink-500/40 text-pink-400 text-xs font-bold px-3 py-2 rounded-xl transition">
-                        <i class="fa-solid fa-thumbs-up mr-1"></i>좋아요
+                    <button onclick="addLike()" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-400 text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-thumbs-up"></i>
+                        <span>좋아요</span>
                     </button>
-                    <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl">
+
+                    <!-- BGM 선택 플레이어 -->
+                    <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
                         <i class="fa-solid fa-music text-indigo-400 text-xs"></i>
                         <select id="bgmSelect" onchange="changeBgm()" class="bg-transparent text-xs text-slate-200 font-bold focus:outline-none">
                             <option value="none" class="bg-slate-900">노래 끄기</option>
@@ -137,27 +180,32 @@
                         </select>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="openEarnModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-3 py-2 rounded-xl transition shadow-lg">
-                        <i class="fa-solid fa-coins mr-1"></i>퀴즈 & 룰렛
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="openEarnModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/20">
+                        <i class="fa-solid fa-coins"></i>
+                        <span>퀴즈 & 룰렛 (+/-)</span>
                     </button>
-                    <button id="teacherQuizBtn" onclick="openTeacherQuizModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-3 py-2 rounded-xl transition shadow-lg">
-                        <i class="fa-solid fa-pen-to-square mr-1"></i>선생님 퀴즈 만들기
+                    <button id="teacherQuizBtn" onclick="openTeacherQuizModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-purple-600/20">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>선생님 퀴즈 만들기</span>
                     </button>
-                    <button onclick="openDonateModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black px-3 py-2 rounded-xl transition shadow-lg">
-                        <i class="fa-solid fa-gift mr-1"></i>후원하기
+                    <button onclick="openDonateModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+                        <i class="fa-solid fa-gift"></i>
+                        <span>후원하기</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[620px] overflow-hidden shadow-2xl">
-            <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+        <!-- 오른쪽: 실시간 댓글 및 비밀채팅 스튜디오 (4칸) -->
+        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[590px] lg:h-[660px] overflow-hidden shadow-2xl">
+            <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-comments text-indigo-400"></i>
                     <h2 id="chatTitleLabel" class="font-black text-sm text-white">실시간 라이브 댓글</h2>
                 </div>
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-2">
                     <button onclick="toggleSecretChatMode()" id="secretChatBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold px-2.5 py-1 rounded-lg transition border border-slate-700">
                         🔒 비밀채팅 전환
                     </button>
@@ -165,64 +213,52 @@
                 </div>
             </div>
 
-            <div id="chatBox" class="flex-1 p-3 overflow-y-auto chat-scroll space-y-2 text-xs">
-                <div class="text-center text-slate-500 py-2">연속 6회 입력 시 9초간 도배 방지 쿨타임이 작동합니다!</div>
+            <div id="chatBox" class="flex-1 p-3.5 overflow-y-auto chat-scroll space-y-2.5 text-xs">
+                <div class="text-center text-slate-500 py-2">참여자끼리 소통하는 실시간 라이브 채팅창입니다! (도배 방지 9초)</div>
             </div>
 
-            <div id="stickerDrawer" class="hidden border-t border-slate-800 bg-slate-950 p-2.5 space-y-2">
-                <div class="text-[11px] font-black text-amber-400"><i class="fa-solid fa-face-smile mr-1"></i>후원 해금 이모지 & GIF 스티커</div>
+            <!-- 후원 해금 스티커 서랍 -->
+            <div id="stickerDrawer" class="hidden border-t border-slate-800 bg-slate-950 p-3 space-y-2">
+                <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-black text-amber-400"><i class="fa-solid fa-face-smile mr-1"></i>후원 해금 이모지 & GIF 스티커</span>
+                    <span class="text-slate-400">자동 해금</span>
+                </div>
                 <div id="stickerGrid" class="grid grid-cols-4 gap-1.5"></div>
             </div>
 
+            <!-- 도배 방지 경고 바 -->
             <div id="spamBar" class="hidden bg-red-600/20 border-t border-red-500/40 px-3 py-1.5 text-[11px] font-bold text-red-300 text-center">
                 🚫 도배 방지! <span id="spamSec">9</span>초 동안 채팅을 칠 수 없습니다.
             </div>
 
             <form onsubmit="sendChat(event)" class="p-2.5 border-t border-slate-800 bg-slate-950 flex gap-1.5 items-center">
-                <button type="button" onclick="toggleStickers()" class="bg-slate-800 text-amber-400 px-3 py-2 rounded-xl text-xs font-bold">
+                <button type="button" onclick="toggleStickers()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 px-3 py-2.5 rounded-xl text-xs font-bold transition">
                     <i class="fa-solid fa-icons"></i>
                 </button>
-                <input type="text" id="chatInput" placeholder="댓글 입력..." autocomplete="off" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
-                <button type="submit" id="btnChat" class="bg-indigo-600 text-white px-3 py-2 rounded-xl text-xs font-bold">전송</button>
+                <input type="text" id="chatInput" placeholder="댓글 입력 (연속 6회 시 9초 제한)..." autocomplete="off" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                <button type="submit" id="btnChat" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">전송</button>
             </form>
         </div>
     </main>
 
-    <!-- 선생님 방 개설 모달 -->
-    <div id="teacherCreateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-chalkboard-user text-indigo-400 mr-2"></i>선생님 라이브 방 개설</h3>
-                <button onclick="document.getElementById('teacherCreateModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1">선생님 성함</label>
-                <input type="text" id="tNameInput" value="김선생님" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1">수업 방송 제목</label>
-                <input type="text" id="tTitleInput" value="비상 사회 1-2학기 핵심 정리 라이브" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white">
-            </div>
-            <button onclick="createTeacherRoom()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black py-3 rounded-xl text-sm shadow-lg">라이브 방송 시작하기</button>
-        </div>
-    </div>
-
-    <!-- 포인트 얻기 모달 -->
+    <!-- 포인트 얻기 모달 (퀴즈 + 룰렛 + 가위바위보) -->
     <div id="earnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-coins text-amber-400 mr-2"></i>포인트 얻기 (퀴즈 & 룰렛)</h3>
+                <h3 class="font-black text-base text-white"><i class="fa-solid fa-coins text-amber-400 mr-2"></i>포인트 얻기 미니게임 (최대 3000pt)</h3>
                 <button onclick="document.getElementById('earnModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs font-bold">
-                <button type="button" id="tabQuizBtn" onclick="switchEarn('quiz')" class="py-2.5 rounded-xl bg-indigo-600 text-white">📚 교과서 퀴즈 (25초 쿨타임)</button>
-                <button type="button" id="tabRouletteBtn" onclick="switchEarn('roulette')" class="py-2.5 rounded-xl text-slate-400">🎰 200pt 행운의 룰렛</button>
+            <div class="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-[11px] font-bold">
+                <button type="button" id="tabQuizBtn" onclick="switchEarn('quiz')" class="py-2 rounded-xl bg-indigo-600 text-white">📚 퀴즈 (25초쿨타임)</button>
+                <button type="button" id="tabRouletteBtn" onclick="switchEarn('roulette')" class="py-2 rounded-xl text-slate-400">🎰 200pt 룰렛 (+/-)</button>
+                <button type="button" id="tabRpsBtn" onclick="switchEarn('rps')" class="py-2 rounded-xl text-slate-400">✊ 가위바위보 (-200)</button>
             </div>
 
+            <!-- 교과서 퀴즈 세션 -->
             <div id="quizSection" class="space-y-4">
                 <div class="flex items-center justify-between">
-                    <select id="subjectFilter" onchange="nextQuiz()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-indigo-300">
+                    <select id="subjectFilter" onchange="nextQuiz()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-indigo-300 focus:outline-none">
                         <option value="all">전체 과목 랜덤 (100문제)</option>
                         <option value="사회">🌍 비상 중1 사회 (2학기)</option>
                         <option value="과학">🔬 중1 과학</option>
@@ -235,7 +271,7 @@
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
                     <div class="flex items-center justify-between">
                         <span id="quizTag" class="text-[11px] font-black text-indigo-400 bg-indigo-500/15 px-2.5 py-0.5 rounded-full">비상 사회</span>
-                        <span id="quizCooldownText" class="text-[11px] text-amber-400 font-bold hidden">⏳ 다음 문제 대기 중 (25초)</span>
+                        <span id="quizCooldownText" class="text-[11px] text-amber-400 font-bold hidden">⏳ 쿨타임 (25초)</span>
                     </div>
                     <p id="qText" class="text-sm font-bold text-white leading-relaxed">문제를 불러오는 중...</p>
                     <div id="qOptions" class="space-y-2 pt-1"></div>
@@ -243,46 +279,71 @@
 
                 <div id="qFeedback" class="hidden p-3 rounded-xl text-xs font-bold text-center"></div>
 
-                <button id="nextQuizBtn" onclick="nextQuiz()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs">
+                <button id="nextQuizBtn" onclick="nextQuiz()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
                     <i class="fa-solid fa-shuffle mr-1"></i>다음 랜덤 문제 뽑기
                 </button>
             </div>
 
+            <!-- 200pt 룰렛 세션 -->
             <div id="rouletteSection" class="hidden space-y-4 text-center">
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
-                    <p class="text-xs text-slate-400">참가 비용: <span class="text-amber-400 font-bold">200 pt</span> (대박의 꿈 또는 꽝 주의!)</p>
-                    <div id="rouletteWheelBox" class="w-36 h-36 mx-auto rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-amber-500 flex items-center justify-center shadow-2xl border-4 border-slate-800 text-2xl font-black text-white transition-transform duration-700">
+                    <p class="text-xs text-slate-400 font-bold">참가 비용: <span class="text-amber-400">200 pt</span> (당첨 시 플러스, 꽝이나 파산 시 마이너스)</p>
+                    <div id="rouletteWheelBox" class="w-36 h-36 mx-auto rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-amber-500 flex items-center justify-center shadow-2xl border-4 border-slate-800 text-3xl text-white transition-transform duration-700">
                         🎰
                     </div>
                     <p id="rouletteResultText" class="text-sm font-black text-indigo-300">버튼을 눌러 200pt 룰렛을 돌려보세요!</p>
                 </div>
-                <button onclick="spinRoulette()" id="spinBtn" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black py-3.5 rounded-2xl text-sm shadow-xl">
+                <button onclick="spinRoulette()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black py-3.5 rounded-2xl text-sm shadow-xl transition">
                     🚀 200pt 내고 룰렛 돌리기!
                 </button>
+            </div>
+
+            <!-- 가위바위보 세션 -->
+            <div id="rpsSection" class="hidden space-y-4 text-center">
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3">
+                    <p class="text-xs text-slate-400 font-bold">패배 시 <span class="text-red-400">-200 pt 감점</span> / 승리 시 <span class="text-emerald-400">+120 pt</span></p>
+                    <div class="flex items-center justify-center gap-6 py-3">
+                        <div>
+                            <div id="rpsMyHand" class="text-5xl mb-1">❓</div>
+                            <span class="text-[11px] text-slate-400 font-bold">나</span>
+                        </div>
+                        <span class="text-lg font-black text-slate-600">VS</span>
+                        <div>
+                            <div id="rpsBotHand" class="text-5xl mb-1">🤖</div>
+                            <span class="text-[11px] text-slate-400 font-bold">AI 봇</span>
+                        </div>
+                    </div>
+                    <p id="rpsResultText" class="text-sm font-black text-indigo-300">가위, 바위, 보 중 선택하세요!</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="playRps('가위')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black transition">✌️ 가위</button>
+                    <button onclick="playRps('바위')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black transition">✊ 바위</button>
+                    <button onclick="playRps('보')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black transition">🖐️ 보</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- 선생님 퀴즈 만들기 모달 (선생님만 접근 가능) -->
+    <!-- 선생님 퀴즈 만들기 모달 -->
     <div id="teacherQuizModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
             <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-pen-to-square text-purple-400 mr-2"></i>선생님 전용 커스텀 퀴즈 출제</h3>
+                <h3 class="font-black text-base text-white"><i class="fa-solid fa-pen-to-square text-purple-400 mr-2"></i>선생님 전용 퀴즈 출제</h3>
                 <button onclick="document.getElementById('teacherQuizModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1">퀴즈 질문 내용</label>
-                <input type="text" id="customQuizQ" placeholder="예: 오늘 수업에서 가장 중요한 개념은?" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white">
+                <label class="block text-xs font-bold text-slate-400 mb-1.5">퀴즈 질문</label>
+                <input type="text" id="customQuizQ" placeholder="예: 오늘 수업 핵심 개념은?" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white">
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1">정답 (학생들이 풀 정답)</label>
-                <input type="text" id="customQuizCorrect" placeholder="예: 문화 상대주의" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white">
+                <label class="block text-xs font-bold text-slate-400 mb-1.5">정답</label>
+                <input type="text" id="customQuizCorrect" placeholder="예: 문화 상대주의" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white">
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <input type="text" id="customQuizWrong1" placeholder="오답 보기 1" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
-                <input type="text" id="customQuizWrong2" placeholder="오답 보기 2" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                <input type="text" id="customQuizWrong1" placeholder="오답 1" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white">
+                <input type="text" id="customQuizWrong2" placeholder="오답 2" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white">
             </div>
-            <button onclick="publishTeacherQuiz()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-3 rounded-xl text-sm shadow-lg">학생들에게 퀴즈 송출하기</button>
+            <button onclick="publishTeacherQuiz()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-purple-600/30 transition">학생들에게 퀴즈 송출하기</button>
         </div>
     </div>
 
@@ -290,10 +351,10 @@
     <div id="penaltyVoteModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
             <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-gavel text-red-500 mr-2"></i>후원 게이지 달성! 벌칙 투표소</h3>
+                <h3 class="font-black text-base text-white"><i class="fa-solid fa-gavel text-red-500 mr-2"></i>후원 7000pt 달성! 벌칙 투표소</h3>
                 <button onclick="document.getElementById('penaltyVoteModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <p class="text-xs text-slate-400">후원 누적 금액이 7,000pt를 돌파하여 학생들이 직접 고른 50가지 벌칙 후보 중 하나에 투표할 수 있습니다!</p>
+            <p class="text-xs text-slate-400">누적 후원 7,000pt 돌파 기념! 학생들이 직접 고른 50가지 벌칙 후보 중 하나에 투표하세요.</p>
             <div id="penaltyListContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
             <button onclick="submitPenaltyVote()" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl text-sm shadow-lg">선택한 벌칙으로 최종 투표하기</button>
         </div>
@@ -307,19 +368,19 @@
                 <button onclick="document.getElementById('donateModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1">후원 포인트</label>
-                <select id="dAmount" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white">
+                <label class="block text-xs font-bold text-slate-400 mb-1.5">후원 포인트</label>
+                <select id="dAmount" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none">
                     <option value="100">100 pt</option>
                     <option value="500">500 pt</option>
                     <option value="1000" selected>1000 pt</option>
-                    <option value="3000">3000 pt (게이지 폭발!)</option>
+                    <option value="3000">3000 pt (후원 게이지 폭발!)</option>
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1">응원 메시지</label>
-                <input type="text" id="dMsg" placeholder="선생님 7000pt 달성 고고!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white">
+                <label class="block text-xs font-bold text-slate-400 mb-1.5">응원 메시지</label>
+                <input type="text" id="dMsg" placeholder="선생님 7000pt 달성 고고!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none">
             </div>
-            <button onclick="sendDonation()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black py-3 rounded-xl text-sm shadow-lg">후원 보내기</button>
+            <button onclick="sendDonation()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 text-slate-950 font-black py-3.5 rounded-xl text-sm shadow-lg">후원 보내기</button>
         </div>
     </div>
 
@@ -335,22 +396,21 @@
             { id: 's8', req: 1000, type: 'gif', icon: '👑', label: '1000pt 왕관' }
         ];
 
-        const PENALTIES_50 = Array.from({ length: 50 }, (_, i) => `50가지 벌칙 후보 #${i + 1}: ${['코로 피아노 치기', '상어 모자 쓰고 1분간 춤추기', '영어 안 쓰고 세종대왕 찬양하기', '레몬 한 입에 먹고 미소 짓기', '양파 썰며 랩하기'][i % 5]}`);
+        const PENALTIES_50 = Array.from({ length: 50 }, (_, i) => `벌칙 후보 #${i + 1}: ${['코로 피아노 치기', '상어 모자 쓰고 1분간 춤추기', '영어 안 쓰고 세종대왕 찬양하기', '레몬 한 입에 먹고 미소 짓기', '양파 썰며 랩하기'][i % 5]}`);
 
         const QUIZ_BANK = [
             { s: '사회', q: '한 사회의 구성원들이 공유하는 생활 양식의 총체를 무엇이라고 하는가?', a: ['문화', '자연환경', '유전', '본능'] },
             { s: '사회', q: '문화의 속성 중 "태어날 때부터 타고나는 것이 아니라 후천적으로 배우는 것"은?', a: ['학습성', '공유성', '변동성', '축적성'] },
             { s: '사회', q: '자신이 속한 문화만을 우수하다고 여기고 다른 문화를 열등하게 보는 태도는?', a: ['자문화 중심주의', '문화 사대주의', '문화 상대주의', '다문화주의'] },
-            { s: '사회', q: '각 사회의 문화를 그 사회의 환경과 맥락 속에서 이해하려는 태도는?', a: ['문화 상대주의', '자문화 중심주의', '문화 사대주의', '국수주의'] },
             { s: '과학', q: '지구 내부 구조 중 부피가 가장 큰 층은 어디인가?', a: ['맨틀', '지각', '외핵', '내핵'] },
             { s: '수학', q: '1보다 큰 자연수 중에서 1과 자기 자신만을 약수로 가지는 수는?', a: ['소수', '합성수', '음수', '무리수'] },
             { s: '영어', q: '"그는 매일 축구를 한다"를 영어로 바르게 옮긴 것은?', a: ['He plays soccer every day.', 'He play soccer every day.', 'He playing soccer.', 'He is play soccer.'] }
         ];
 
         let state = {
-            role: 'student', // 'teacher' or 'student'
+            role: 'student',
             isTeacher: false,
-            currentRoomId: null,
+            currentRoomCode: null,
             balance: 300,
             totalDonated: 0,
             chatCount: 0,
@@ -362,77 +422,67 @@
             customTeacherQuiz: null
         };
 
-        // 가상의 활성 라이브 방 목록 (여러 개 존재 가능)
-        let activeLiveRooms = [
-            { id: 'room_1', teacher: '김선생님', title: '비상 사회 1-2학기 핵심 총정리', viewers: 14 },
-            { id: 'room_2', teacher: '박과학 선생님', title: '중1 과학 지각과 맨틀 구조 정복', viewers: 9 },
-            { id: 'room_3', teacher: '이영어 선생님', title: '중1 필수 영단어 & 회화 퀴즈쇼', viewers: 22 }
-        ];
-
-        function renderLiveRoomsList() {
-            const list = document.getElementById('liveRoomsList');
-            if (activeLiveRooms.length === 0) {
-                list.innerHTML = `<div class="col-span-2 text-center text-slate-500 py-6">현재 진행 중인 라이브 방송이 없습니다. 우측 상단에서 방을 개설해보세요!</div>`;
-                return;
-            }
-            list.innerHTML = activeLiveRooms.map(r => `
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-indigo-500/50 transition">
-                    <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="px-2 py-0.5 text-[9px] font-black bg-red-600 text-white rounded-full animate-pulse">LIVE</span>
-                            <span class="text-xs font-bold text-indigo-400">👨‍🏫 ${escapeHtml(r.teacher)}</span>
-                        </div>
-                        <h4 class="text-sm font-black text-white">${escapeHtml(r.title)}</h4>
-                        <p class="text-[11px] text-slate-500 mt-0.5">참여 학생: ${r.viewers}명 시청 중</p>
-                    </div>
-                    <button onclick="joinLiveRoom('${r.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-4 py-2.5 rounded-xl text-xs transition shrink-0">
-                        입장하기
-                    </button>
-                </div>
-            `).join('');
+        function showToast(msg, isErr = false) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastText').innerText = msg;
+            t.className = `fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold ${isErr ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
         }
 
-        function openTeacherCreateModal() {
-            document.getElementById('teacherCreateModal').classList.remove('hidden');
+        function switchLobbyRole(role) {
+            const isTeacher = role === 'teacher';
+            state.role = role;
+            state.isTeacher = isTeacher;
+
+            document.getElementById('tabTeacher').className = isTeacher ? 'py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition' : 'py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition';
+            document.getElementById('tabStudent').className = !isTeacher ? 'py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white transition' : 'py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition';
+
+            document.getElementById('teacherLobbyForm').classList.toggle('hidden', !isTeacher);
+            document.getElementById('studentLobbyForm').classList.toggle('hidden', isTeacher);
         }
 
-        function createTeacherRoom() {
-            const name = document.getElementById('tNameInput').value.trim() || '선생님';
+        function handleStartTeacher(e) {
+            e.preventDefault();
+            const name = document.getElementById('tNameInput').value.trim() || '김선생님';
             const title = document.getElementById('tTitleInput').value.trim() || '실시간 라이브 수업';
-            const newId = 'room_' + Date.now();
+            const roomCode = String(Math.floor(100000 + Math.random() * 900000));
 
-            activeLiveRooms.unshift({ id: newId, teacher: name, title, viewers: 1 });
             state.isTeacher = true;
             state.role = 'teacher';
-            state.currentRoomId = newId;
+            state.currentRoomCode = roomCode;
 
-            document.getElementById('teacherCreateModal').classList.add('hidden');
-            enterStudioMode(name, title);
-            showToast(`👨‍🏫 "${name}" 선생님의 라이브 방이 개설되었습니다!`);
+            enterStudioMode(name, title, roomCode);
+            showToast(`👨‍🏫 방 개설 완료! 참여 코드: ${roomCode}`);
         }
 
-        function joinLiveRoom(roomId) {
-            const room = activeLiveRooms.find(r => r.id === roomId);
-            if (!room) return showToast('존재하지 않거나 종료된 방송입니다.', true);
+        function handleJoinStudent(e) {
+            e.preventDefault();
+            const nickname = document.getElementById('sNicknameInput').value.trim();
+            const roomCode = document.getElementById('sRoomCodeInput').value.trim();
+
+            if (!nickname || roomCode.length !== 6) {
+                showToast('닉네임과 6자리 참여 코드를 정확히 입력해주세요.', true);
+                return;
+            }
 
             state.isTeacher = false;
             state.role = 'student';
-            state.currentRoomId = roomId;
+            state.currentRoomCode = roomCode;
 
-            enterStudioMode(room.teacher, room.title);
-            showToast(`🎓 "${room.teacher}" 선생님의 수업에 입장했습니다!`);
+            enterStudioMode(nickname, '선생님 라이브 수업', roomCode);
+            showToast('🎓 수업에 입장했습니다! (300pt 지급)');
         }
 
-        function enterStudioMode(teacherName, title) {
+        function enterStudioMode(name, title, roomCode) {
             document.getElementById('lobbyView').classList.add('hidden');
             document.getElementById('studioView').classList.remove('hidden');
             document.getElementById('headerStats').classList.remove('hidden');
             document.getElementById('liveBadge').classList.remove('hidden');
             document.getElementById('leaveRoomBtn').classList.remove('hidden');
-            document.getElementById('headerSubtitle').innerText = `${teacherName} 선생님의 라이브 스튜디오`;
-            document.getElementById('studioMainTitle').innerText = `${title} (${teacherName})`;
+            document.getElementById('headerSubtitle').innerText = `코드: ${roomCode} (${name})`;
+            document.getElementById('studioMainTitle').innerText = title;
 
-            // 선생님 전용 버튼 노출 제어
             const tBtn = document.getElementById('teacherQuizBtn');
             if (state.isTeacher) {
                 tBtn.classList.remove('hidden');
@@ -442,7 +492,7 @@
         }
 
         function leaveLiveRoom() {
-            state.currentRoomId = null;
+            state.currentRoomCode = null;
             state.isTeacher = false;
             state.role = 'student';
 
@@ -452,8 +502,7 @@
             document.getElementById('leaveRoomBtn').classList.add('hidden');
             document.getElementById('pinnedNoticeBanner').classList.add('hidden');
             document.getElementById('lobbyView').classList.remove('hidden');
-            renderLiveRoomsList();
-            showToast('라이브 방송에서 퇴장하여 로비로 돌아왔습니다.');
+            showToast('라이브 방송에서 퇴장했습니다.');
         }
 
         let audioCtx = null;
@@ -491,15 +540,10 @@
             }, p.speed);
         }
 
-        function showToast(msg, isErr = false) {
-            const t = document.getElementById('toast');
-            document.getElementById('toastText').innerText = msg;
-            t.className = `fixed top-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold ${isErr ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3000);
-        }
-
         function updateUI() {
+            if (state.balance > 3000) state.balance = 3000;
+            if (state.balance < 0) state.balance = 0;
+
             document.getElementById('myBalance').innerText = `${state.balance} pt`;
             document.getElementById('unlockBadge').innerText = `후원 ${state.totalDonated}pt`;
             document.getElementById('totalDonationDisplay').innerText = state.totalDonated;
@@ -513,15 +557,14 @@
         }
 
         function toggleSubscribe() {
-            state.balance += 50;
             updateUI();
-            showToast('구독 완료! 보너스 +50pt 지급!');
+            showToast('구독 설정 완료! 🔔');
             document.getElementById('subCount').innerText = parseInt(document.getElementById('subCount').innerText) + 1;
         }
 
         function addLike() {
             document.getElementById('likeCount').innerText = parseInt(document.getElementById('likeCount').innerText) + 1;
-            showToast('좋아요를 눌렀습니다! ❤️');
+            showToast('좋아요! ❤️');
         }
 
         function toggleStickers() {
@@ -559,12 +602,12 @@
                 btn.className = 'bg-amber-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg border border-amber-500';
                 btn.innerText = '🔓 일반채팅 복귀';
                 titleLabel.innerText = '🔒 비밀채팅방 (참여자 전용)';
-                showToast('비밀채팅 모드로 전환되었습니다. 참여자끼리만 대화합니다.');
+                showToast('비밀채팅 모드로 전환되었습니다.');
             } else {
                 btn.className = 'bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-700';
                 btn.innerText = '🔒 비밀채팅 전환';
                 titleLabel.innerText = '실시간 라이브 댓글';
-                showToast('일반 라이브 댓글창으로 돌아왔습니다.');
+                showToast('일반 댓글창으로 돌아왔습니다.');
             }
         }
 
@@ -641,12 +684,15 @@
         }
 
         function switchEarn(tab) {
-            const isQuiz = tab === 'quiz';
-            document.getElementById('tabQuizBtn').className = isQuiz ? 'py-2.5 rounded-xl bg-indigo-600 text-white' : 'py-2.5 rounded-xl text-slate-400';
-            document.getElementById('tabRouletteBtn').className = !isQuiz ? 'py-2.5 rounded-xl bg-emerald-600 text-white' : 'py-2.5 rounded-xl text-slate-400';
-            document.getElementById('quizSection').classList.toggle('hidden', !isQuiz);
-            document.getElementById('rouletteSection').classList.toggle('hidden', !isQuiz);
-            if (isQuiz && !state.currentQuiz) nextQuiz();
+            document.getElementById('tabQuizBtn').className = tab === 'quiz' ? 'py-2 rounded-xl bg-indigo-600 text-white' : 'py-2 rounded-xl text-slate-400';
+            document.getElementById('tabRouletteBtn').className = tab === 'roulette' ? 'py-2 rounded-xl bg-emerald-600 text-white' : 'py-2 rounded-xl text-slate-400';
+            document.getElementById('tabRpsBtn').className = tab === 'rps' ? 'py-2 rounded-xl bg-purple-600 text-white' : 'py-2 rounded-xl text-slate-400';
+
+            document.getElementById('quizSection').classList.toggle('hidden', tab !== 'quiz');
+            document.getElementById('rouletteSection').classList.toggle('hidden', tab !== 'roulette');
+            document.getElementById('rpsSection').classList.toggle('hidden', tab !== 'rps');
+
+            if (tab === 'quiz' && !state.currentQuiz) nextQuiz();
         }
 
         function shuffle(arr) {
@@ -662,7 +708,7 @@
             const now = Date.now();
             if (now < state.quizCooldownUntil) {
                 const remain = Math.ceil((state.quizCooldownUntil - now) / 1000);
-                showToast(`⏳ 퀴즈 쿨타임 중입니다! (${remain}초 남음)`, true);
+                showToast(`⏳ 퀴즈 쿨타임 중! (${remain}초)`, true);
                 return;
             }
 
@@ -680,7 +726,7 @@
             state.currentQuiz = { q: item.q, correct: item.a[0], opts };
             state.answered = false;
 
-            document.getElementById('quizTag').innerText = item.s === '커스텀' ? '👨‍🏫 선생님 출제 퀴즈' : `📘 중1 ${item.s}`;
+            document.getElementById('quizTag').innerText = item.s === '커스텀' ? '👨‍ 선생 출제 퀴즈' : `📘 중1 ${item.s}`;
             document.getElementById('qText').innerText = item.q;
             document.getElementById('qFeedback').classList.add('hidden');
 
@@ -740,7 +786,7 @@
             const wheel = document.getElementById('rouletteWheelBox');
             const resText = document.getElementById('rouletteResultText');
             wheel.style.transform = 'rotate(1080deg)';
-            resText.innerText = '룰렛이 돌아가는 중... 🎲';
+            resText.innerText = '룰렛 돌리는 중... 🎲';
 
             setTimeout(() => {
                 wheel.style.transform = 'rotate(0deg)';
@@ -759,6 +805,37 @@
             }, 1000);
         }
 
+        function playRps(userChoice) {
+            const hands = ['가위', '바위', '보'];
+            const emojis = { '가위': '✌️', '바위': '✊', '보': '🖐️' };
+            const botChoice = hands[Math.floor(Math.random() * 3)];
+
+            document.getElementById('rpsMyHand').innerText = emojis[userChoice];
+            document.getElementById('rpsBotHand').innerText = emojis[botChoice];
+
+            const resText = document.getElementById('rpsResultText');
+            if (userChoice === botChoice) {
+                state.balance += 30;
+                updateUI();
+                resText.className = 'text-sm font-black text-amber-400';
+                resText.innerText = `🤝 비겼습니다! +30 pt 획득!`;
+            } else if (
+                (userChoice === '가위' && botChoice === '보') ||
+                (userChoice === '바위' && botChoice === '가위') ||
+                (userChoice === '보' && botChoice === '바위')
+            ) {
+                state.balance += 120;
+                updateUI();
+                resText.className = 'text-sm font-black text-emerald-400';
+                resText.innerText = `🏆 승리! +120 pt 획득!`;
+            } else {
+                state.balance -= 200;
+                updateUI();
+                resText.className = 'text-sm font-black text-red-400';
+                resText.innerText = `😢 패배! -200 pt 감점!`;
+            }
+        }
+
         function openTeacherQuizModal() {
             if (!state.isTeacher) {
                 showToast('🚨 퀴즈 출제는 선생님만 가능합니다!', true);
@@ -768,25 +845,19 @@
         }
 
         function publishTeacherQuiz() {
-            if (!state.isTeacher) {
-                showToast('🚨 권한이 없습니다!', true);
-                return;
-            }
+            if (!state.isTeacher) return showToast('권한이 없습니다.', true);
             const q = document.getElementById('customQuizQ').value.trim();
             const correct = document.getElementById('customQuizCorrect').value.trim();
             const w1 = document.getElementById('customQuizWrong1').value.trim() || '오답1';
             const w2 = document.getElementById('customQuizWrong2').value.trim() || '오답2';
 
-            if (!q || !correct) {
-                showToast('질문과 정답을 입력해주세요.', true);
-                return;
-            }
+            if (!q || !correct) return showToast('질문과 정답을 입력해주세요.', true);
 
             state.customTeacherQuiz = { s: '커스텀', q, a: [correct, w1, w2] };
             document.getElementById('teacherQuizModal').classList.add('hidden');
-            showToast('👨‍🏫 선생님이 새 퀴즈를 출제했습니다! 학생들의 퀴즈 탭에 반영됩니다.');
-            
-            document.getElementById('noticeBannerText').innerText = `[선생님 출제 퀴즈 등록됨] ${q}`;
+            showToast('👨‍🏫 선생님이 커스텀 퀴즈를 출제했습니다!');
+
+            document.getElementById('noticeBannerText').innerText = `[선생님 출제 퀴즈] ${q}`;
             document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
         }
 
@@ -803,12 +874,10 @@
 
         function submitPenaltyVote() {
             const radios = document.getElementsByName('penaltyRadio');
-            let chosen = '50가지 후보 중 기본 벌칙';
-            for (const r of radios) {
-                if (r.checked) { chosen = r.value; break; }
-            }
+            let chosen = '기본 벌칙';
+            for (const r of radios) { if (r.checked) { chosen = r.value; break; } }
             document.getElementById('penaltyVoteModal').classList.add('hidden');
-            showToast(`🚨 투표 완료! 최종 벌칙으로 선정되었습니다: "${chosen}"`);
+            showToast(`🚨 투표 완료! 최종 벌칙: "${chosen}"`);
             appendChat('시스템', `🚨 [벌칙 투표 결과] 우리 반 최종 벌칙이 "${chosen}"(으)로 확정되었습니다!`);
         }
 
@@ -830,7 +899,7 @@
 
             document.getElementById('donateModal').classList.add('hidden');
             document.getElementById('dMsg').value = '';
-            showToast(`🎁 ${amt}pt 후원 성공! 7000pt 게이지가 누적되었습니다.`);
+            showToast(`🎁 ${amt}pt 후원 성공! 7000pt 게이지 누적!`);
             appendChat('나', `[후원 ${amt}pt] ${msg}`);
 
             if (state.totalDonated >= 7000) {
@@ -842,7 +911,6 @@
             return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
         }
 
-        renderLiveRoomsList();
         updateUI();
     </script>
 </body>
