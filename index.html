@@ -165,7 +165,7 @@
 
                 <!-- 선생님 스마트 칠판 캔버스 -->
                 <div id="whiteboardContainer" class="hidden absolute inset-0 bg-slate-900 flex flex-col">
-                    <div class="bg-slate-800/90 px-4 py-2 flex items-center justify-between border-b border-slate-700">
+                    <div class="bg-slate-800/90 px-4 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-slate-700">
                         <div class="flex items-center gap-2">
                             <span class="text-xs font-bold text-indigo-400"><i class="fa-solid fa-pen-nib mr-1"></i>스마트 칠판</span>
                             <button onclick="setPenColor('#ffffff')" class="w-5 h-5 rounded-full bg-white border border-slate-500"></button>
@@ -173,11 +173,25 @@
                             <button onclick="setPenColor('#facc15')" class="w-5 h-5 rounded-full bg-yellow-400"></button>
                             <button onclick="setPenColor('#38bdf8')" class="w-5 h-5 rounded-full bg-sky-400"></button>
                         </div>
-                        <button onclick="clearWhiteboard()" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded-lg text-white font-bold">
-                            <i class="fa-solid fa-eraser mr-1"></i>전체 지우기
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+                                <i class="fa-solid fa-image"></i>
+                                <span>사진 올리기</span>
+                                <input type="file" accept="image/*" onchange="uploadWhiteboardImage(event)" class="hidden">
+                            </label>
+                            <button onclick="promptWhiteboardVideo()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+                                <i class="fa-brands fa-youtube"></i>
+                                <span>유튜브 넣기</span>
+                            </button>
+                            <button onclick="clearWhiteboard()" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded-lg text-white font-bold">
+                                <i class="fa-solid fa-eraser mr-1"></i>지우기
+                            </button>
+                        </div>
                     </div>
-                    <canvas id="wbCanvas" class="flex-1 w-full h-full cursor-crosshair touch-none"></canvas>
+                    <div class="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center bg-slate-950">
+                        <canvas id="wbCanvas" class="absolute inset-0 w-full h-full cursor-crosshair touch-none"></canvas>
+                        <div id="wbMediaOverlay" class="absolute inset-0 pointer-events-none flex items-center justify-center p-4"></div>
+                    </div>
                 </div>
 
                 <!-- 실시간 후원 알림 팝업 오버레이 -->
@@ -731,12 +745,11 @@
             if (isTeacher) {
                 document.getElementById('teacherControls').classList.remove('hidden');
                 document.getElementById('studentControls').classList.add('hidden');
-                appState.totalDonated = 9999;
             } else {
                 document.getElementById('teacherControls').classList.add('hidden');
                 document.getElementById('studentControls').classList.remove('hidden');
-                updateBalanceUI();
             }
+            updateBalanceUI();
             updateUnlockBadgeUI();
         }
 
@@ -1386,7 +1399,7 @@
             canvas.width = canvas.offsetWidth || 800;
             canvas.height = canvas.offsetHeight || 450;
             wbCtx = canvas.getContext('2d');
-            wbCtx.fillStyle = '#0f172a';
+            wbCtx.fillStyle = '#090d16';
             wbCtx.fillRect(0, 0, canvas.width, canvas.height);
             wbCtx.lineWidth = 4;
             wbCtx.lineCap = 'round';
@@ -1419,9 +1432,39 @@
 
             appState.streamTimer = setInterval(() => {
                 if (!appState.isWhiteboard || !socket) return;
-                const frame = canvas.toDataURL('image/jpeg', 0.55);
+                const container = document.getElementById('whiteboardContainer');
+                const frame = container.querySelector('canvas').toDataURL('image/jpeg', 0.55);
                 socket.emit('stream_frame', { roomCode: appState.roomCode, frame });
             }, 300);
+        }
+
+        function uploadWhiteboardImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.getElementById('wbCanvas');
+                    wbCtx.drawImage(img, 50, 50, 300, (300 * img.height) / img.width);
+                    showToast('칠판에 사진이 추가되었습니다!');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function promptWhiteboardVideo() {
+            const url = prompt('유튜브 영상 주소(URL)를 입력해 주세요:');
+            if (!url) return;
+            const ytId = extractYoutubeId(url);
+            if (!ytId) {
+                showToast('올바른 유튜브 주소가 아닙니다.', true);
+                return;
+            }
+            const overlay = document.getElementById('wbMediaOverlay');
+            overlay.innerHTML = `<iframe class="w-full max-w-lg aspect-video rounded-2xl shadow-2xl border-2 border-indigo-500 pointer-events-auto" src="https://www.youtube.com/embed/${ytId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+            showToast('칠판에 유튜브 영상이 띄워졌습니다!');
         }
 
         function setPenColor(color) {
@@ -1432,9 +1475,10 @@
         function clearWhiteboard() {
             const canvas = document.getElementById('wbCanvas');
             if (wbCtx && canvas) {
-                wbCtx.fillStyle = '#0f172a';
+                wbCtx.fillStyle = '#090d16';
                 wbCtx.fillRect(0, 0, canvas.width, canvas.height);
             }
+            document.getElementById('wbMediaOverlay').innerHTML = '';
         }
 
         function openShareModal() {
@@ -1467,3 +1511,4 @@
     </script>
 </body>
 </html>
+```
