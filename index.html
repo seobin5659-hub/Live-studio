@@ -1,1 +1,896 @@
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>선생님 실시간 라이브 스튜디오</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chat-scroll::-webkit-scrollbar { width: 5px; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        @keyframes floatHeart {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-220px) scale(1.6); opacity: 0; }
+        }
+        .heart-float {
+            position: absolute;
+            bottom: 20px;
+            animation: floatHeart 2s ease-out forwards;
+            pointer-events: none;
+            z-index: 40;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.7) translateY(20px); opacity: 0; }
+            70% { transform: scale(1.05) translateY(0); opacity: 1; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .donation-pop { animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
+    <!-- 상단 내비게이션 바 -->
+    <header class="h-16 border-b border-slate-800 bg-slate-900/90 backdrop-blur px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid fa-tower-broadcast text-white text-base"></i>
+            </div>
+            <div>
+                <h1 class="font-black text-base md:text-lg tracking-tight text-white flex items-center gap-2">
+                    선생님 라이브 스튜디오
+                    <span id="liveBadge" class="hidden px-2 py-0.5 text-[10px] font-black bg-red-600 text-white rounded-full animate-pulse">LIVE</span>
+                </h1>
+                <p id="headerSubtitle" class="text-[11px] text-slate-400">전용 실시간 서버 연결 준비 완료</p>
+            </div>
+        </div>
+
+        <div id="headerActions" class="hidden flex items-center gap-2 md:gap-3">
+            <div class="hidden sm:flex items-center gap-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
+                <span class="text-slate-400">참여 코드:</span>
+                <span id="displayRoomCode" class="font-mono font-black text-indigo-400 tracking-widest text-sm">------</span>
+            </div>
+            <button onclick="openShareModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/20">
+                <i class="fa-solid fa-share-nodes"></i>
+                <span>학생 초대</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 토스트 알림 -->
+    <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold bg-emerald-600 text-white">
+        <i id="toastIcon" class="fa-solid fa-circle-check"></i>
+        <span id="toastText">알림 메시지</span>
+    </div>
+
+    <!-- 1. 초기 입장 / 방 개설 화면 -->
+    <main id="lobbyView" class="flex-1 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl">
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-2xl mb-6 border border-slate-800">
+                <button type="button" id="tabTeacher" onclick="switchTab('teacher')" class="py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition">
+                    👨‍🏫 선생님 (방 개설)
+                </button>
+                <button type="button" id="tabStudent" onclick="switchTab('student')" class="py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition">
+                    🎓 학생 (수업 입장)
+                </button>
+            </div>
+
+            <!-- 선생님 폼 -->
+            <form id="teacherForm" onsubmit="handleStartTeacher(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">선생님 성함</label>
+                    <input type="text" id="teacherName" value="김선생님" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">수업 방송 제목</label>
+                    <input type="text" id="teacherRoomTitle" value="즐거운 실시간 소통 수업" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <button type="submit" id="btnCreateRoom" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-video"></i>
+                    <span>라이브 수업 개설하기</span>
+                </button>
+            </form>
+
+            <!-- 학생 폼 -->
+            <form id="studentForm" onsubmit="handleJoinStudent(event)" class="hidden space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">내 닉네임</label>
+                    <input type="text" id="studentNickname" placeholder="예: 홍길동" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">참여 코드 (6자리 숫자)</label>
+                    <input type="text" id="joinRoomCode" maxlength="6" placeholder="예: 123456" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-center font-mono text-lg tracking-widest text-indigo-400 font-black focus:outline-none focus:border-indigo-500">
+                </div>
+                <button type="submit" id="btnJoinRoom" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>수업 입장하기 (500pt 지급)</span>
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- 2. 메인 라이브 스튜디오 화면 -->
+    <main id="studioView" class="hidden flex-1 max-w-[1500px] w-full mx-auto p-3 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
+        <!-- 왼쪽: 방송 영상 & 컨트롤 영역 (8칸) -->
+        <div class="lg:col-span-8 flex flex-col gap-4">
+            <!-- 상단 고정 공지 배너 -->
+            <div id="pinnedNoticeBanner" class="hidden bg-amber-500/15 border border-amber-500/40 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 text-amber-300 text-xs md:text-sm font-bold">
+                    <i class="fa-solid fa-thumbtack text-amber-400"></i>
+                    <span id="noticeBannerText">공지사항 내용이 여기에 표시됩니다.</span>
+                </div>
+                <button onclick="document.getElementById('pinnedNoticeBanner').classList.add('hidden')" class="text-amber-400/70 hover:text-amber-300 text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- 비디오 / 스마트 칠판 메인 화면 -->
+            <div id="stageContainer" class="relative aspect-video bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-2xl flex items-center justify-center">
+                <div id="videoPlaceholder" class="text-center p-6">
+                    <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500 text-2xl">
+                        <i class="fa-solid fa-display"></i>
+                    </div>
+                    <p id="placeholderText" class="text-sm font-bold text-slate-300">송출 대기 중입니다</p>
+                    <p class="text-xs text-slate-500 mt-1">선생님이 화면 공유, 카메라 또는 스마트 칠판을 켜면 여기에 표시됩니다.</p>
+                </div>
+
+                <!-- 선생님 로컬 비디오 -->
+                <video id="mainVideo" autoplay playsinline muted class="hidden w-full h-full object-contain bg-black"></video>
+
+                <!-- 학생 수신용 원격 캔버스 -->
+                <canvas id="remoteCanvas" class="hidden w-full h-full object-contain bg-slate-900"></canvas>
+
+                <!-- 선생님 스마트 칠판 캔버스 -->
+                <div id="whiteboardContainer" class="hidden absolute inset-0 bg-slate-900 flex flex-col">
+                    <div class="bg-slate-800/90 px-4 py-2 flex items-center justify-between border-b border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-indigo-400"><i class="fa-solid fa-pen-nib mr-1"></i>스마트 칠판</span>
+                            <button onclick="setPenColor('#ffffff')" class="w-5 h-5 rounded-full bg-white border border-slate-500"></button>
+                            <button onclick="setPenColor('#f87171')" class="w-5 h-5 rounded-full bg-red-400"></button>
+                            <button onclick="setPenColor('#facc15')" class="w-5 h-5 rounded-full bg-yellow-400"></button>
+                            <button onclick="setPenColor('#38bdf8')" class="w-5 h-5 rounded-full bg-sky-400"></button>
+                        </div>
+                        <button onclick="clearWhiteboard()" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded-lg text-white font-bold">
+                            <i class="fa-solid fa-eraser mr-1"></i>전체 지우기
+                        </button>
+                    </div>
+                    <canvas id="wbCanvas" class="flex-1 w-full h-full cursor-crosshair touch-none"></canvas>
+                </div>
+
+                <!-- 실시간 후원 알림 팝업 오버레이 -->
+                <div id="donationOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-4 pointer-events-none bg-black/40 backdrop-blur-[2px]">
+                    <div class="donation-pop max-w-md w-full bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-400 rounded-3xl p-5 text-center shadow-2xl shadow-amber-500/30">
+                        <div class="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full text-xs font-black mb-2">
+                            <i class="fa-solid fa-crown"></i>
+                            <span id="overlayDonorName">학생</span>님의 후원!
+                            <span id="overlayDonateAmount" class="text-white ml-1">100pt</span>
+                        </div>
+                        <div id="overlayMediaContainer" class="my-2 flex justify-center"></div>
+                        <p id="overlayDonateMsg" class="text-base md:text-lg font-black text-white break-keep mt-2">선생님 수업 최고예요!</p>
+                    </div>
+                </div>
+
+                <!-- 최고 후원자 배지 -->
+                <div id="topDonatorBadge" class="hidden absolute top-3 left-3 z-20 bg-slate-950/80 backdrop-blur border border-amber-500/40 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs">
+                    <span class="text-amber-400 font-black">👑 후원 1위</span>
+                    <span id="topDonatorText" class="font-bold text-white">-</span>
+                </div>
+            </div>
+
+            <!-- 하단 컨트롤 바 (선생님 전용) -->
+            <div id="teacherControls" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="toggleScreenShare()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-desktop"></i>
+                        <span>화면 공유</span>
+                    </button>
+                    <button onclick="toggleCamera()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>카메라 켜기</span>
+                    </button>
+                    <button onclick="toggleWhiteboard()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-chalkboard"></i>
+                        <span>스마트 칠판</span>
+                    </button>
+                </div>
+                <button onclick="document.getElementById('noticeModal').classList.remove('hidden')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>공지 띄우기</span>
+                </button>
+            </div>
+
+            <!-- 하단 컨트롤 바 (학생 전용) -->
+            <div id="studentControls" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="text-slate-400">내 보유 포인트:</span>
+                    <span id="studentBalanceText" class="font-black text-amber-400 text-sm">500 pt</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="sendHeartReaction()" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-400 text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-heart"></i>
+                        <span>하트 보내기</span>
+                    </button>
+                    <button onclick="document.getElementById('donateModal').classList.remove('hidden')" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+                        <i class="fa-solid fa-gift"></i>
+                        <span>후원하기</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽: 실시간 채팅 스튜디오 (4칸) -->
+        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[560px] lg:h-[650px] overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-comments text-indigo-400"></i>
+                    <h2 class="font-black text-sm text-white">실시간 라이브 댓글</h2>
+                </div>
+                <span id="connectionBadge" class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">서버 연결됨</span>
+            </div>
+
+            <div id="chatBox" class="flex-1 p-4 overflow-y-auto chat-scroll space-y-3 text-xs">
+                <div class="text-center text-slate-500 py-2">수업 라이브 방이 준비되었습니다!</div>
+            </div>
+
+            <form onsubmit="handleSendChat(event)" class="p-3 border-t border-slate-800 bg-slate-950 flex gap-2">
+                <input type="text" id="chatInput" placeholder="실시간 댓글을 입력하세요..." autocomplete="off" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">전송</button>
+            </form>
+        </div>
+    </main>
+
+    <!-- 공지 작성 모달 -->
+    <div id="noticeModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-base text-white"><i class="fa-solid fa-bullhorn text-amber-400 mr-2"></i>수업 공지 띄우기</h3>
+                <button onclick="document.getElementById('noticeModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="text" id="noticeInput" placeholder="예: 교과서 42페이지를 펴주세요!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white">
+            <button onclick="submitNotice()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl text-sm">공지 등록하기</button>
+        </div>
+    </div>
+
+    <!-- 후원하기 모달 -->
+    <div id="donateModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>선생님께 후원하기</h3>
+                <button onclick="document.getElementById('donateModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-bold">
+                <button type="button" onclick="selectDonateType('text')" id="dTabText" class="py-2 rounded-lg bg-amber-500 text-slate-950">💬 텍스트</button>
+                <button type="button" onclick="selectDonateType('emoji')" id="dTabEmoji" class="py-2 rounded-lg text-slate-400">😎 이모지</button>
+                <button type="button" onclick="selectDonateType('image')" id="dTabImage" class="py-2 rounded-lg text-slate-400">🖼️ 사진</button>
+                <button type="button" onclick="selectDonateType('video')" id="dTabVideo" class="py-2 rounded-lg text-slate-400">🎬 영상</button>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">후원 포인트</label>
+                <select id="donateAmount" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white">
+                    <option value="50">50 pt (가벼운 응원)</option>
+                    <option value="100" selected>100 pt (열정 응원)</option>
+                    <option value="300">300 pt (슈퍼 후원)</option>
+                </select>
+            </div>
+
+            <div id="donateEmojiArea" class="hidden">
+                <label class="block text-xs font-bold text-slate-400 mb-1.5">대형 이모지 선택</label>
+                <div class="grid grid-cols-6 gap-1.5 bg-slate-950 p-2 rounded-xl border border-slate-800 text-xl text-center">
+                    <button type="button" onclick="pickDonateEmoji('🎉')" class="emoji-opt p-1.5 rounded-lg bg-amber-500/30 border border-amber-400">🎉</button>
+                    <button type="button" onclick="pickDonateEmoji('🔥')" class="emoji-opt p-1.5 rounded-lg hover:bg-slate-800">🔥</button>
+                    <button type="button" onclick="pickDonateEmoji('❤️')" class="emoji-opt p-1.5 rounded-lg hover:bg-slate-800">❤️</button>
+                    <button type="button" onclick="pickDonateEmoji('👏')" class="emoji-opt p-1.5 rounded-lg hover:bg-slate-800">👏</button>
+                    <button type="button" onclick="pickDonateEmoji('👑')" class="emoji-opt p-1.5 rounded-lg hover:bg-slate-800">👑</button>
+                    <button type="button" onclick="pickDonateEmoji('🚀')" class="emoji-opt p-1.5 rounded-lg hover:bg-slate-800">🚀</button>
+                </div>
+            </div>
+
+            <div id="donateImageArea" class="hidden">
+                <label class="block text-xs font-bold text-slate-400 mb-1">그림/사진 선택</label>
+                <input type="file" id="donateImageFile" accept="image/*" onchange="previewDonateImage(event)" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-600 file:text-white file:font-bold">
+            </div>
+
+            <div id="donateVideoArea" class="hidden">
+                <label class="block text-xs font-bold text-slate-400 mb-1">유튜브 영상 링크 (URL)</label>
+                <input type="text" id="donateVideoUrl" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">응원 메시지 (AI 음성으로 읽어줍니다)</label>
+                <input type="text" id="donateMessage" placeholder="선생님 수업 정말 재밌어요!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white">
+            </div>
+
+            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                <input type="checkbox" id="donateTts" checked class="rounded text-amber-500">
+                <span>🔊 AI 음성(TTS)으로 후원 메시지 읽어주기</span>
+            </label>
+
+            <button type="button" onclick="handleSendDonation()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black py-3 rounded-xl text-sm shadow-lg">후원 보내기</button>
+        </div>
+    </div>
+
+    <!-- 학생 초대 모달 -->
+    <div id="shareModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-base text-white"><i class="fa-solid fa-user-plus text-indigo-400 mr-2"></i>학생 초대하기</h3>
+                <button onclick="document.getElementById('shareModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">참여 코드 (6자리)</label>
+                <div class="flex gap-2">
+                    <input type="text" id="shareRoomCodeInput" readonly class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 font-mono text-lg font-black text-indigo-400 text-center">
+                    <button onclick="copyText('shareRoomCodeInput')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 rounded-xl text-xs font-bold">복사</button>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">참여 링크</label>
+                <div class="flex gap-2">
+                    <input type="text" id="shareUrlInput" readonly class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300">
+                    <button onclick="copyText('shareUrlInput')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 rounded-xl text-xs font-bold">복사</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = typeof io !== 'undefined' ? io() : null;
+
+        const appState = {
+            role: null,
+            roomCode: null,
+            nickname: '선생님',
+            balance: 500,
+            topDonator: { name: '', amount: 0 },
+            localStream: null,
+            isWhiteboard: false,
+            donateType: 'text',
+            selectedEmoji: '🎉',
+            donateImageBase64: null,
+            streamTimer: null
+        };
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const text = document.getElementById('toastText');
+            const icon = document.getElementById('toastIcon');
+            text.innerText = msg;
+            toast.className = `fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold ${isError ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`;
+            icon.className = isError ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check';
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3500);
+        }
+
+        function switchTab(role) {
+            const isTeacher = role === 'teacher';
+            document.getElementById('tabTeacher').className = isTeacher
+                ? 'py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition'
+                : 'py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition';
+            document.getElementById('tabStudent').className = !isTeacher
+                ? 'py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white transition'
+                : 'py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition';
+            document.getElementById('teacherForm').classList.toggle('hidden', !isTeacher);
+            document.getElementById('studentForm').classList.toggle('hidden', isTeacher);
+        }
+
+        function enterStudioUI(roomCode, title, isTeacher) {
+            document.getElementById('lobbyView').classList.add('hidden');
+            document.getElementById('studioView').classList.remove('hidden');
+            document.getElementById('headerActions').classList.remove('hidden');
+            document.getElementById('liveBadge').classList.remove('hidden');
+            document.getElementById('displayRoomCode').innerText = roomCode;
+            document.getElementById('headerSubtitle').innerText = title;
+
+            if (isTeacher) {
+                document.getElementById('teacherControls').classList.remove('hidden');
+                document.getElementById('studentControls').classList.add('hidden');
+            } else {
+                document.getElementById('teacherControls').classList.add('hidden');
+                document.getElementById('studentControls').classList.remove('hidden');
+                document.getElementById('studentBalanceText').innerText = `${appState.balance} pt`;
+            }
+        }
+
+        // Socket.IO 서버 이벤트 수신
+        if (socket) {
+            socket.on('connect', () => {
+                document.getElementById('connectionBadge').innerText = '서버 연결됨';
+                document.getElementById('connectionBadge').className = 'text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full';
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('connectionBadge').innerText = '재연결 중...';
+                document.getElementById('connectionBadge').className = 'text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full';
+            });
+
+            socket.on('room_created', ({ roomCode, title }) => {
+                enterStudioUI(roomCode, title, true);
+                showToast(`라이브 방 개설 완료! 참여 코드: ${roomCode}`);
+            });
+
+            socket.on('join_error', (msg) => {
+                showToast(msg, true);
+            });
+
+            socket.on('join_success', ({ roomCode, title, latestNotice, latestFrame, history }) => {
+                enterStudioUI(roomCode, title, false);
+                showToast('수업에 입장했습니다! (500pt 지급)');
+                if (latestNotice) {
+                    document.getElementById('noticeBannerText').innerText = latestNotice;
+                    document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
+                }
+                if (latestFrame) {
+                    renderRemoteFrame(latestFrame);
+                }
+                if (Array.isArray(history)) {
+                    history.forEach(ev => processIncomingEvent(ev, true));
+                }
+            });
+
+            socket.on('system_message', (msg) => {
+                processIncomingEvent({ type: 'system', message: msg });
+            });
+
+            socket.on('stream_frame', ({ frame }) => {
+                if (appState.role === 'student') {
+                    renderRemoteFrame(frame);
+                }
+            });
+
+            socket.on('live_event', (payload) => {
+                processIncomingEvent(payload, false);
+            });
+        }
+
+        // 1. 선생님 방 개설
+        function handleStartTeacher(e) {
+            e.preventDefault();
+            if (!socket || !socket.connected) {
+                showToast('서버와 연결 중입니다. 잠시 후 다시 눌러주세요.', true);
+                return;
+            }
+            const name = document.getElementById('teacherName').value.trim() || '선생님';
+            const title = document.getElementById('teacherRoomTitle').value.trim() || '실시간 라이브 수업';
+            const roomCode = String(Math.floor(100000 + Math.random() * 900000));
+
+            appState.role = 'teacher';
+            appState.nickname = name;
+            appState.roomCode = roomCode;
+
+            socket.emit('create_room', { roomCode, teacherName: name, title });
+        }
+
+        // 2. 학생 방 입장
+        function handleJoinStudent(e) {
+            e.preventDefault();
+            if (!socket || !socket.connected) {
+                showToast('서버와 연결 중입니다. 잠시 후 다시 눌러주세요.', true);
+                return;
+            }
+            const nickname = document.getElementById('studentNickname').value.trim();
+            const roomCode = document.getElementById('joinRoomCode').value.trim();
+            if (!nickname || roomCode.length !== 6) {
+                showToast('닉네임과 6자리 참여 코드를 입력해 주세요.', true);
+                return;
+            }
+
+            appState.role = 'student';
+            appState.nickname = nickname;
+            appState.roomCode = roomCode;
+
+            socket.emit('join_room', { roomCode, nickname });
+        }
+
+        function renderRemoteFrame(frameDataUrl) {
+            if (!frameDataUrl) {
+                document.getElementById('remoteCanvas').classList.add('hidden');
+                document.getElementById('videoPlaceholder').classList.remove('hidden');
+                return;
+            }
+            const rCanvas = document.getElementById('remoteCanvas');
+            const img = new Image();
+            img.onload = () => {
+                rCanvas.width = img.width;
+                rCanvas.height = img.height;
+                rCanvas.getContext('2d').drawImage(img, 0, 0);
+                rCanvas.classList.remove('hidden');
+                document.getElementById('videoPlaceholder').classList.add('hidden');
+            };
+            img.src = frameDataUrl;
+        }
+
+        // 3. 선생님 화면 공유 / 카메라 / 칠판 송출
+        async function toggleScreenShare() {
+            try {
+                stopAllMedia();
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+                appState.localStream = stream;
+                startVideoFrameBroadcast(stream);
+                showToast('화면 공유가 시작되었습니다!');
+                stream.getVideoTracks()[0].onended = () => stopAllMedia();
+            } catch {
+                showToast('화면 공유가 취소되었거나 현재 기기에서 지원하지 않습니다.', true);
+            }
+        }
+
+        async function toggleCamera() {
+            try {
+                stopAllMedia();
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                appState.localStream = stream;
+                startVideoFrameBroadcast(stream);
+                showToast('카메라 방송이 시작되었습니다!');
+            } catch {
+                showToast('카메라 권한을 허용해 주세요.', true);
+            }
+        }
+
+        function startVideoFrameBroadcast(stream) {
+            const video = document.getElementById('mainVideo');
+            video.srcObject = stream;
+            video.classList.remove('hidden');
+            document.getElementById('videoPlaceholder').classList.add('hidden');
+            document.getElementById('whiteboardContainer').classList.add('hidden');
+
+            const tempCanvas = document.createElement('canvas');
+            const ctx = tempCanvas.getContext('2d');
+
+            appState.streamTimer = setInterval(() => {
+                if (!appState.localStream || !socket) return;
+                tempCanvas.width = 640;
+                tempCanvas.height = 360;
+                ctx.drawImage(video, 0, 0, 640, 360);
+                const frame = tempCanvas.toDataURL('image/jpeg', 0.55);
+                socket.emit('stream_frame', { roomCode: appState.roomCode, frame });
+            }, 250);
+        }
+
+        function stopAllMedia() {
+            if (appState.localStream) {
+                appState.localStream.getTracks().forEach(t => t.stop());
+                appState.localStream = null;
+            }
+            if (appState.streamTimer) {
+                clearInterval(appState.streamTimer);
+                appState.streamTimer = null;
+            }
+            appState.isWhiteboard = false;
+            document.getElementById('mainVideo').classList.add('hidden');
+            document.getElementById('whiteboardContainer').classList.add('hidden');
+            document.getElementById('videoPlaceholder').classList.remove('hidden');
+            if (socket && appState.roomCode) {
+                socket.emit('stream_frame', { roomCode: appState.roomCode, frame: null });
+            }
+        }
+
+        let wbCtx = null;
+        let drawing = false;
+        let penColor = '#ffffff';
+
+        function toggleWhiteboard() {
+            if (appState.isWhiteboard) {
+                stopAllMedia();
+                return;
+            }
+            stopAllMedia();
+            appState.isWhiteboard = true;
+            document.getElementById('videoPlaceholder').classList.add('hidden');
+            document.getElementById('whiteboardContainer').classList.remove('hidden');
+
+            const canvas = document.getElementById('wbCanvas');
+            canvas.width = canvas.offsetWidth || 800;
+            canvas.height = canvas.offsetHeight || 450;
+            wbCtx = canvas.getContext('2d');
+            wbCtx.fillStyle = '#0f172a';
+            wbCtx.fillRect(0, 0, canvas.width, canvas.height);
+            wbCtx.lineWidth = 4;
+            wbCtx.lineCap = 'round';
+            wbCtx.strokeStyle = penColor;
+
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * (canvas.width / rect.width),
+                    y: (clientY - rect.top) * (canvas.height / rect.height)
+                };
+            };
+
+            canvas.onmousedown = canvas.ontouchstart = (e) => {
+                drawing = true;
+                const pos = getPos(e);
+                wbCtx.beginPath();
+                wbCtx.moveTo(pos.x, pos.y);
+            };
+            canvas.onmousemove = canvas.ontouchmove = (e) => {
+                if (!drawing) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                wbCtx.lineTo(pos.x, pos.y);
+                wbCtx.stroke();
+            };
+            canvas.onmouseup = canvas.ontouchend = () => { drawing = false; };
+
+            appState.streamTimer = setInterval(() => {
+                if (!appState.isWhiteboard || !socket) return;
+                const frame = canvas.toDataURL('image/jpeg', 0.55);
+                socket.emit('stream_frame', { roomCode: appState.roomCode, frame });
+            }, 300);
+        }
+
+        function setPenColor(color) {
+            penColor = color;
+            if (wbCtx) wbCtx.strokeStyle = color;
+        }
+
+        function clearWhiteboard() {
+            const canvas = document.getElementById('wbCanvas');
+            if (wbCtx && canvas) {
+                wbCtx.fillStyle = '#0f172a';
+                wbCtx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // 4. 채팅, 공지, 후원, 하트 전송
+        function handleSendChat(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text || !socket) return;
+            input.value = '';
+
+            socket.emit('live_event', {
+                roomCode: appState.roomCode,
+                type: 'chat',
+                sender: appState.nickname,
+                role: appState.role,
+                message: text,
+                time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+            });
+        }
+
+        function submitNotice() {
+            const input = document.getElementById('noticeInput');
+            const text = input.value.trim();
+            if (!text || !socket) return;
+            input.value = '';
+            document.getElementById('noticeModal').classList.add('hidden');
+
+            socket.emit('live_event', {
+                roomCode: appState.roomCode,
+                type: 'notice',
+                message: text
+            });
+        }
+
+        function sendHeartReaction() {
+            if (!socket) return;
+            socket.emit('live_event', {
+                roomCode: appState.roomCode,
+                type: 'heart',
+                sender: appState.nickname
+            });
+        }
+
+        function selectDonateType(type) {
+            appState.donateType = type;
+            document.getElementById('dTabText').className = type === 'text' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
+            document.getElementById('dTabEmoji').className = type === 'emoji' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
+            document.getElementById('dTabImage').className = type === 'image' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
+            document.getElementById('dTabVideo').className = type === 'video' ? 'py-2 rounded-lg bg-amber-500 text-slate-950' : 'py-2 rounded-lg text-slate-400';
+
+            document.getElementById('donateEmojiArea').classList.toggle('hidden', type !== 'emoji');
+            document.getElementById('donateImageArea').classList.toggle('hidden', type !== 'image');
+            document.getElementById('donateVideoArea').classList.toggle('hidden', type !== 'video');
+        }
+
+        function pickDonateEmoji(emoji) {
+            appState.selectedEmoji = emoji;
+            document.querySelectorAll('.emoji-opt').forEach(btn => {
+                btn.className = btn.innerText.trim() === emoji
+                    ? 'emoji-opt p-1.5 rounded-lg bg-amber-500/30 border border-amber-400'
+                    : 'emoji-opt p-1.5 rounded-lg hover:bg-slate-800';
+            });
+        }
+
+        function previewDonateImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => { appState.donateImageBase64 = reader.result; };
+            reader.readAsDataURL(file);
+        }
+
+        function extractYoutubeId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function handleSendDonation() {
+            const amount = parseInt(document.getElementById('donateAmount').value, 10);
+            if (appState.balance < amount) {
+                showToast('보유 포인트가 부족합니다!', true);
+                return;
+            }
+            const message = document.getElementById('donateMessage').value.trim() || '선생님 응원합니다!';
+            const tts = document.getElementById('donateTts').checked;
+            let mediaData = null;
+
+            if (appState.donateType === 'emoji') {
+                mediaData = appState.selectedEmoji;
+            } else if (appState.donateType === 'image') {
+                if (!appState.donateImageBase64) {
+                    showToast('후원할 그림/사진을 선택해 주세요.', true);
+                    return;
+                }
+                mediaData = appState.donateImageBase64;
+            } else if (appState.donateType === 'video') {
+                const ytId = extractYoutubeId(document.getElementById('donateVideoUrl').value.trim());
+                if (!ytId) {
+                    showToast('올바른 유튜브 영상 주소를 입력해 주세요.', true);
+                    return;
+                }
+                mediaData = ytId;
+            }
+
+            appState.balance -= amount;
+            document.getElementById('studentBalanceText').innerText = `${appState.balance} pt`;
+            document.getElementById('donateModal').classList.add('hidden');
+            document.getElementById('donateMessage').value = '';
+
+            if (socket) {
+                socket.emit('live_event', {
+                    roomCode: appState.roomCode,
+                    type: 'donation',
+                    sender: appState.nickname,
+                    amount,
+                    donateType: appState.donateType,
+                    mediaData,
+                    message,
+                    tts
+                });
+            }
+        }
+
+        function processIncomingEvent(data, isHistory = false) {
+            const chatBox = document.getElementById('chatBox');
+
+            if (data.type === 'system') {
+                const div = document.createElement('div');
+                div.className = 'text-center text-[11px] text-indigo-300 bg-indigo-500/10 rounded-lg py-1';
+                div.innerText = data.message;
+                chatBox.appendChild(div);
+            } else if (data.type === 'chat') {
+                const isTeacher = data.role === 'teacher';
+                const div = document.createElement('div');
+                div.className = `p-2.5 rounded-2xl ${isTeacher ? 'bg-indigo-600/20 border border-indigo-500/40' : 'bg-slate-800/70'}`;
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold ${isTeacher ? 'text-indigo-400' : 'text-emerald-400'}">${isTeacher ? '👨‍🏫 ' : ''}${escapeHtml(data.sender)}</span>
+                        <span class="text-[10px] text-slate-500">${data.time || ''}</span>
+                    </div>
+                    <p class="text-slate-100 break-words leading-relaxed">${escapeHtml(data.message)}</p>
+                `;
+                chatBox.appendChild(div);
+            } else if (data.type === 'notice') {
+                document.getElementById('noticeBannerText').innerText = data.message;
+                document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
+                const div = document.createElement('div');
+                div.className = 'p-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 font-bold';
+                div.innerHTML = `📢 [공지] ${escapeHtml(data.message)}`;
+                chatBox.appendChild(div);
+            } else if (data.type === 'heart' && !isHistory) {
+                spawnFloatingHeart();
+            } else if (data.type === 'donation') {
+                if (data.amount >= appState.topDonator.amount) {
+                    appState.topDonator = { name: data.sender, amount: data.amount };
+                    document.getElementById('topDonatorText').innerText = `${data.sender} (${data.amount}pt)`;
+                    document.getElementById('topDonatorBadge').classList.remove('hidden');
+                }
+                const div = document.createElement('div');
+                div.className = 'p-3 rounded-2xl bg-gradient-to-r from-amber-500/25 to-orange-500/25 border border-amber-400/60 space-y-1.5';
+                let chatMediaHtml = '';
+                if (data.donateType === 'emoji' && data.mediaData) {
+                    chatMediaHtml = `<div class="text-4xl text-center py-1">${data.mediaData}</div>`;
+                } else if (data.donateType === 'image' && data.mediaData) {
+                    chatMediaHtml = `<img src="${data.mediaData}" class="max-h-32 rounded-xl mx-auto">`;
+                } else if (data.donateType === 'video' && data.mediaData) {
+                    chatMediaHtml = `<div class="text-[11px] text-amber-300 font-bold"><i class="fa-brands fa-youtube text-red-500 mr-1"></i>유튜브 영상 후원</div>`;
+                }
+                div.innerHTML = `
+                    <div class="flex items-center justify-between text-amber-300 font-black">
+                        <span>🎁 ${escapeHtml(data.sender)}님의 후원!</span>
+                        <span>${data.amount} pt</span>
+                    </div>
+                    ${chatMediaHtml}
+                    <p class="text-white font-bold">${escapeHtml(data.message)}</p>
+                `;
+                chatBox.appendChild(div);
+                if (!isHistory) triggerDonationOverlay(data);
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function triggerDonationOverlay(data) {
+            const overlay = document.getElementById('donationOverlay');
+            const mediaBox = document.getElementById('overlayMediaContainer');
+            document.getElementById('overlayDonorName').innerText = data.sender;
+            document.getElementById('overlayDonateAmount').innerText = `${data.amount}pt`;
+            document.getElementById('overlayDonateMsg').innerText = data.message;
+            mediaBox.innerHTML = '';
+
+            let duration = 5000;
+            if (data.donateType === 'emoji' && data.mediaData) {
+                mediaBox.innerHTML = `<div class="text-7xl md:text-8xl py-2 animate-bounce">${data.mediaData}</div>`;
+            } else if (data.donateType === 'image' && data.mediaData) {
+                mediaBox.innerHTML = `<img src="${data.mediaData}" class="max-h-44 rounded-2xl border border-amber-400/50">`;
+            } else if (data.donateType === 'video' && data.mediaData) {
+                duration = 10000;
+                mediaBox.innerHTML = `<iframe class="w-72 h-40 rounded-2xl border border-amber-400/50" src="https://www.youtube.com/embed/${data.mediaData}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+            }
+
+            overlay.classList.remove('hidden');
+
+            if (data.tts && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(`${data.sender}님이 ${data.amount}포인트 후원하셨습니다! ${data.message}`);
+                utter.lang = 'ko-KR';
+                utter.rate = 1.05;
+                window.speechSynthesis.speak(utter);
+            }
+
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                mediaBox.innerHTML = '';
+            }, duration);
+        }
+
+        function spawnFloatingHeart() {
+            const stage = document.getElementById('stageContainer');
+            const heart = document.createElement('div');
+            heart.className = 'heart-float text-2xl md:text-3xl';
+            heart.innerText = ['❤️', '💖', '💕', '🧡'][Math.floor(Math.random() * 4)];
+            heart.style.left = `${15 + Math.random() * 70}%`;
+            stage.appendChild(heart);
+            setTimeout(() => heart.remove(), 2000);
+        }
+
+        function openShareModal() {
+            const code = appState.roomCode;
+            const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
+            document.getElementById('shareRoomCodeInput').value = code;
+            document.getElementById('shareUrlInput').value = url;
+            document.getElementById('shareModal').classList.remove('hidden');
+        }
+
+        function copyText(inputId) {
+            const input = document.getElementById(inputId);
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            showToast('복사되었습니다!');
+        }
+
+        function escapeHtml(str) {
+            return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const room = params.get('room');
+            if (room) {
+                switchTab('student');
+                document.getElementById('joinRoomCode').value = room;
+            }
+        });
+    </script>
+</body>
+</html>
+```
