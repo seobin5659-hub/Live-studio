@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -36,13 +35,13 @@
             <div>
                 <h1 class="font-black text-sm text-white flex items-center gap-2">
                     실시간 스튜디오 ULTIMATE
-                    <span class="px-2 py-0.5 text-[10px] font-black bg-red-600 text-white rounded-full animate-pulse">LIVE</span>
+                    <span id="liveBadge" class="hidden px-2 py-0.5 text-[10px] font-black bg-red-600 text-white rounded-full animate-pulse">LIVE</span>
                 </h1>
-                <p id="headerSubtitle" class="text-[11px] text-slate-400">비상 사회 1-2 및 통합 미니게임 스튜디오</p>
+                <p id="headerSubtitle" class="text-[11px] text-slate-400">비상 사회 1-2 및 멀티 라이브 스튜디오</p>
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl text-xs">
+            <div id="headerStats" class="hidden flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl text-xs">
                 <span class="text-red-400 font-bold"><i class="fa-solid fa-bell mr-1"></i>구독 <span id="subCount">124</span></span>
                 <span class="text-slate-600">|</span>
                 <span class="text-pink-400 font-bold"><i class="fa-solid fa-thumbs-up mr-1"></i>좋아요 <span id="likeCount">0</span></span>
@@ -53,6 +52,9 @@
                 <span class="text-slate-400">내 포인트:</span>
                 <span id="myBalance" class="font-black text-amber-400 ml-1">300 pt</span>
             </div>
+            <button id="leaveRoomBtn" onclick="leaveLiveRoom()" class="hidden bg-red-600/80 hover:bg-red-600 text-white text-xs font-black px-3 py-1.5 rounded-xl transition">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i>라이브 나가기
+            </button>
         </div>
     </header>
 
@@ -71,20 +73,41 @@
         <span id="toastText">알림</span>
     </div>
 
-    <!-- 메인 라이브 영역 -->
-    <main class="flex-1 max-w-[1550px] w-full mx-auto p-3 grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <!-- 1. 라이브 방 선택 로비 화면 -->
+    <div id="lobbyView" class="flex-1 max-w-4xl w-full mx-auto p-6 flex flex-col justify-center">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-lg font-black text-white">📡 실시간 라이브 수업 로비</h2>
+                    <p class="text-xs text-slate-400 mt-1">개설된 라이브 방송 중 골라서 입장하거나, 선생님으로 방을 개설하세요.</p>
+                </div>
+                <button onclick="openTeacherCreateModal()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black px-4 py-2.5 rounded-xl text-xs shadow-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-video"></i>
+                    <span>선생님 방 개설하기</span>
+                </button>
+            </div>
+
+            <div>
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">현재 진행 중인 라이브 목록</h3>
+                <div id="liveRoomsList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- 동적 생성 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 메인 라이브 스튜디오 화면 -->
+    <main id="studioView" class="hidden flex-1 max-w-[1550px] w-full mx-auto p-3 grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="lg:col-span-8 flex flex-col gap-3">
-            <!-- 비디오/칠판 스태이지 -->
             <div class="relative aspect-video bg-slate-900 rounded-3xl border border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl">
                 <div class="text-center p-6">
                     <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500 text-2xl">
                         <i class="fa-solid fa-chalkboard-user"></i>
                     </div>
-                    <p class="text-sm font-bold text-slate-300">선생님 라이브 방송 송출 화면</p>
+                    <p class="text-sm font-bold text-slate-300" id="studioMainTitle">선생님 라이브 방송 송출 화면</p>
                     <p class="text-xs text-slate-500 mt-1">BGM, 퀴즈(25초 쿨타임), 룰렛(+/-), 후원 게이지(7000pt 벌칙투표)를 즐겨보세요!</p>
                 </div>
 
-                <!-- 후원 게이지 7000pt 달성 시 벌칙 투표 바 오버레이 -->
                 <div id="penaltyVoteContainer" class="hidden absolute top-3 left-3 right-3 bg-slate-950/90 border border-amber-500 rounded-2xl p-3 z-30 shadow-2xl">
                     <div class="flex items-center justify-between text-xs mb-2">
                         <span class="font-black text-amber-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i>후원 게이지 7,000pt 달성! 벌칙 투표 오픈!</span>
@@ -96,7 +119,6 @@
                 </div>
             </div>
 
-            <!-- 하단 컨트롤 바 -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
                 <div class="flex flex-wrap items-center gap-2">
                     <button onclick="toggleSubscribe()" id="btnSub" class="bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3 py-2 rounded-xl transition">
@@ -119,7 +141,7 @@
                     <button onclick="openEarnModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-3 py-2 rounded-xl transition shadow-lg">
                         <i class="fa-solid fa-coins mr-1"></i>퀴즈 & 룰렛
                     </button>
-                    <button onclick="openTeacherQuizModal()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-3 py-2 rounded-xl transition shadow-lg">
+                    <button id="teacherQuizBtn" onclick="openTeacherQuizModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-3 py-2 rounded-xl transition shadow-lg">
                         <i class="fa-solid fa-pen-to-square mr-1"></i>선생님 퀴즈 만들기
                     </button>
                     <button onclick="openDonateModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black px-3 py-2 rounded-xl transition shadow-lg">
@@ -129,7 +151,6 @@
             </div>
         </div>
 
-        <!-- 오른쪽: 실시간 채팅 & 비밀채팅 영역 -->
         <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[620px] overflow-hidden shadow-2xl">
             <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
                 <div class="flex items-center gap-2">
@@ -167,7 +188,26 @@
         </div>
     </main>
 
-    <!-- 포인트 얻기 모달 (교과서 퀴즈 + 200pt 룰렛 + 25초 쿨타임) -->
+    <!-- 선생님 방 개설 모달 -->
+    <div id="teacherCreateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-base text-white"><i class="fa-solid fa-chalkboard-user text-indigo-400 mr-2"></i>선생님 라이브 방 개설</h3>
+                <button onclick="document.getElementById('teacherCreateModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">선생님 성함</label>
+                <input type="text" id="tNameInput" value="김선생님" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">수업 방송 제목</label>
+                <input type="text" id="tTitleInput" value="비상 사회 1-2학기 핵심 정리 라이브" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white">
+            </div>
+            <button onclick="createTeacherRoom()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black py-3 rounded-xl text-sm shadow-lg">라이브 방송 시작하기</button>
+        </div>
+    </div>
+
+    <!-- 포인트 얻기 모달 -->
     <div id="earnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between">
@@ -180,7 +220,6 @@
                 <button type="button" id="tabRouletteBtn" onclick="switchEarn('roulette')" class="py-2.5 rounded-xl text-slate-400">🎰 200pt 행운의 룰렛</button>
             </div>
 
-            <!-- 퀴즈 탭 -->
             <div id="quizSection" class="space-y-4">
                 <div class="flex items-center justify-between">
                     <select id="subjectFilter" onchange="nextQuiz()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-indigo-300">
@@ -209,7 +248,6 @@
                 </button>
             </div>
 
-            <!-- 룰렛 탭 (+와 - 가 공존하는 200pt 룰렛) -->
             <div id="rouletteSection" class="hidden space-y-4 text-center">
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
                     <p class="text-xs text-slate-400">참가 비용: <span class="text-amber-400 font-bold">200 pt</span> (대박의 꿈 또는 꽝 주의!)</p>
@@ -225,11 +263,11 @@
         </div>
     </div>
 
-    <!-- 선생님 퀴즈 만들기 모달 -->
+    <!-- 선생님 퀴즈 만들기 모달 (선생님만 접근 가능) -->
     <div id="teacherQuizModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
             <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-pen-to-square text-purple-400 mr-2"></i>선생님 커스텀 퀴즈 출제</h3>
+                <h3 class="font-black text-base text-white"><i class="fa-solid fa-pen-to-square text-purple-400 mr-2"></i>선생님 전용 커스텀 퀴즈 출제</h3>
                 <button onclick="document.getElementById('teacherQuizModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div>
@@ -237,7 +275,7 @@
                 <input type="text" id="customQuizQ" placeholder="예: 오늘 수업에서 가장 중요한 개념은?" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white">
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1">정답 (1번 보기에 자동 배치)</label>
+                <label class="block text-xs font-bold text-slate-400 mb-1">정답 (학생들이 풀 정답)</label>
                 <input type="text" id="customQuizCorrect" placeholder="예: 문화 상대주의" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white">
             </div>
             <div class="grid grid-cols-2 gap-2">
@@ -265,18 +303,15 @@
     <div id="donateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
             <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>선생님께 후원하기 (게이지 누적)</h3>
+                <h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>선생님께 후원하기</h3>
                 <button onclick="document.getElementById('donateModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-2.5 text-[11px] text-amber-200">
-                💡 후원금은 전용 스티커 해금뿐만 아니라 <b>7,000pt 벌칙 투표 게이지</b>를 채웁니다!
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-400 mb-1">후원 포인트</label>
                 <select id="dAmount" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white">
                     <option value="100">100 pt</option>
                     <option value="500">500 pt</option>
-                    <option value="1000" selected>1000 pt (슈퍼 후원)</option>
+                    <option value="1000" selected>1000 pt</option>
                     <option value="3000">3000 pt (게이지 폭발!)</option>
                 </select>
             </div>
@@ -313,6 +348,9 @@
         ];
 
         let state = {
+            role: 'student', // 'teacher' or 'student'
+            isTeacher: false,
+            currentRoomId: null,
             balance: 300,
             totalDonated: 0,
             chatCount: 0,
@@ -321,10 +359,102 @@
             answered: false,
             quizCooldownUntil: 0,
             isSecretChat: false,
-            secretChatParticipants: ['나', '김선생님', '모범생민수'],
-            selectedPenalty: null,
             customTeacherQuiz: null
         };
+
+        // 가상의 활성 라이브 방 목록 (여러 개 존재 가능)
+        let activeLiveRooms = [
+            { id: 'room_1', teacher: '김선생님', title: '비상 사회 1-2학기 핵심 총정리', viewers: 14 },
+            { id: 'room_2', teacher: '박과학 선생님', title: '중1 과학 지각과 맨틀 구조 정복', viewers: 9 },
+            { id: 'room_3', teacher: '이영어 선생님', title: '중1 필수 영단어 & 회화 퀴즈쇼', viewers: 22 }
+        ];
+
+        function renderLiveRoomsList() {
+            const list = document.getElementById('liveRoomsList');
+            if (activeLiveRooms.length === 0) {
+                list.innerHTML = `<div class="col-span-2 text-center text-slate-500 py-6">현재 진행 중인 라이브 방송이 없습니다. 우측 상단에서 방을 개설해보세요!</div>`;
+                return;
+            }
+            list.innerHTML = activeLiveRooms.map(r => `
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-indigo-500/50 transition">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 text-[9px] font-black bg-red-600 text-white rounded-full animate-pulse">LIVE</span>
+                            <span class="text-xs font-bold text-indigo-400">👨‍🏫 ${escapeHtml(r.teacher)}</span>
+                        </div>
+                        <h4 class="text-sm font-black text-white">${escapeHtml(r.title)}</h4>
+                        <p class="text-[11px] text-slate-500 mt-0.5">참여 학생: ${r.viewers}명 시청 중</p>
+                    </div>
+                    <button onclick="joinLiveRoom('${r.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-4 py-2.5 rounded-xl text-xs transition shrink-0">
+                        입장하기
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function openTeacherCreateModal() {
+            document.getElementById('teacherCreateModal').classList.remove('hidden');
+        }
+
+        function createTeacherRoom() {
+            const name = document.getElementById('tNameInput').value.trim() || '선생님';
+            const title = document.getElementById('tTitleInput').value.trim() || '실시간 라이브 수업';
+            const newId = 'room_' + Date.now();
+
+            activeLiveRooms.unshift({ id: newId, teacher: name, title, viewers: 1 });
+            state.isTeacher = true;
+            state.role = 'teacher';
+            state.currentRoomId = newId;
+
+            document.getElementById('teacherCreateModal').classList.add('hidden');
+            enterStudioMode(name, title);
+            showToast(`👨‍🏫 "${name}" 선생님의 라이브 방이 개설되었습니다!`);
+        }
+
+        function joinLiveRoom(roomId) {
+            const room = activeLiveRooms.find(r => r.id === roomId);
+            if (!room) return showToast('존재하지 않거나 종료된 방송입니다.', true);
+
+            state.isTeacher = false;
+            state.role = 'student';
+            state.currentRoomId = roomId;
+
+            enterStudioMode(room.teacher, room.title);
+            showToast(`🎓 "${room.teacher}" 선생님의 수업에 입장했습니다!`);
+        }
+
+        function enterStudioMode(teacherName, title) {
+            document.getElementById('lobbyView').classList.add('hidden');
+            document.getElementById('studioView').classList.remove('hidden');
+            document.getElementById('headerStats').classList.remove('hidden');
+            document.getElementById('liveBadge').classList.remove('hidden');
+            document.getElementById('leaveRoomBtn').classList.remove('hidden');
+            document.getElementById('headerSubtitle').innerText = `${teacherName} 선생님의 라이브 스튜디오`;
+            document.getElementById('studioMainTitle').innerText = `${title} (${teacherName})`;
+
+            // 선생님 전용 버튼 노출 제어
+            const tBtn = document.getElementById('teacherQuizBtn');
+            if (state.isTeacher) {
+                tBtn.classList.remove('hidden');
+            } else {
+                tBtn.classList.add('hidden');
+            }
+        }
+
+        function leaveLiveRoom() {
+            state.currentRoomId = null;
+            state.isTeacher = false;
+            state.role = 'student';
+
+            document.getElementById('studioView').classList.add('hidden');
+            document.getElementById('headerStats').classList.add('hidden');
+            document.getElementById('liveBadge').classList.add('hidden');
+            document.getElementById('leaveRoomBtn').classList.add('hidden');
+            document.getElementById('pinnedNoticeBanner').classList.add('hidden');
+            document.getElementById('lobbyView').classList.remove('hidden');
+            renderLiveRoomsList();
+            showToast('라이브 방송에서 퇴장하여 로비로 돌아왔습니다.');
+        }
 
         let audioCtx = null;
         let bgmTimer = null;
@@ -375,8 +505,7 @@
             document.getElementById('totalDonationDisplay').innerText = state.totalDonated;
 
             const penaltyBox = document.getElementById('penaltyVoteContainer');
-            const gaugeText = document.getElementById('penaltyGaugeText');
-            gaugeText.innerText = `현재 ${state.totalDonated} / 7,000pt`;
+            document.getElementById('penaltyGaugeText').innerText = `현재 ${state.totalDonated} / 7,000pt`;
             if (state.totalDonated >= 7000) {
                 penaltyBox.classList.remove('hidden');
             }
@@ -422,7 +551,6 @@
             document.getElementById('stickerDrawer').classList.add('hidden');
         }
 
-        // 비밀채팅 모드 전환 (참여자끼리만)
         function toggleSecretChatMode() {
             state.isSecretChat = !state.isSecretChat;
             const btn = document.getElementById('secretChatBtn');
@@ -541,7 +669,7 @@
             let item;
             if (state.customTeacherQuiz) {
                 item = state.customTeacherQuiz;
-                state.customTeacherQuiz = null; // 1회성 출제
+                state.customTeacherQuiz = null;
             } else {
                 const sub = document.getElementById('subjectFilter').value;
                 const pool = sub === 'all' ? QUIZ_BANK : QUIZ_BANK.filter(q => q.s === sub);
@@ -583,7 +711,6 @@
                 fb.innerText = `❌ 아쉽네요! 정답은 "${state.currentQuiz.correct}" 입니다.`;
             }
 
-            // 25초 쿨타임 설정
             state.quizCooldownUntil = Date.now() + 25000;
             startQuizCooldownBar();
         }
@@ -602,7 +729,6 @@
             }, 500);
         }
 
-        // 200pt 행운의 룰렛 (+와 - 공존)
         function spinRoulette() {
             if (state.balance < 200) {
                 showToast('룰렛 비용(200pt)이 부족합니다!', true);
@@ -634,10 +760,18 @@
         }
 
         function openTeacherQuizModal() {
+            if (!state.isTeacher) {
+                showToast('🚨 퀴즈 출제는 선생님만 가능합니다!', true);
+                return;
+            }
             document.getElementById('teacherQuizModal').classList.remove('hidden');
         }
 
         function publishTeacherQuiz() {
+            if (!state.isTeacher) {
+                showToast('🚨 권한이 없습니다!', true);
+                return;
+            }
             const q = document.getElementById('customQuizQ').value.trim();
             const correct = document.getElementById('customQuizCorrect').value.trim();
             const w1 = document.getElementById('customQuizWrong1').value.trim() || '오답1';
@@ -650,9 +784,8 @@
 
             state.customTeacherQuiz = { s: '커스텀', q, a: [correct, w1, w2] };
             document.getElementById('teacherQuizModal').classList.add('hidden');
-            showToast('👨‍🏫 선생님이 새 퀴즈를 출제했습니다! "퀴즈 & 룰렛"에서 풀어보세요!');
+            showToast('👨‍🏫 선생님이 새 퀴즈를 출제했습니다! 학생들의 퀴즈 탭에 반영됩니다.');
             
-            // 공지도 자동으로 맨 위에 띄우기
             document.getElementById('noticeBannerText').innerText = `[선생님 출제 퀴즈 등록됨] ${q}`;
             document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
         }
@@ -709,6 +842,7 @@
             return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
         }
 
+        renderLiveRoomsList();
         updateUI();
     </script>
 </body>
