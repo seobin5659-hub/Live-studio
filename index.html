@@ -57,7 +57,7 @@
         <span id="toastText">알림 메시지</span>
     </div>
 
-    <!-- 후원 화면 우측 상단 슬림 팝업 (수업 화면을 가리지 않음) -->
+    <!-- 우측 상단 슬림 후원 알림 (수업 화면을 가리지 않음) -->
     <div id="donationAlertOverlay" class="hidden fixed top-20 right-5 z-50 bg-gradient-to-tr from-amber-600 via-orange-600 to-purple-600 border-2 border-amber-300 rounded-3xl p-4 max-w-sm w-full text-center space-y-2 shadow-2xl animate-bounce">
         <div class="text-[10px] font-black text-amber-200 tracking-widest uppercase">🎁 대형 후원 알림!</div>
         <h2 id="alertDonatorName" class="text-sm font-black text-white">누구누구님이 후원하셨습니다!</h2>
@@ -144,8 +144,10 @@
                     <p class="text-xs text-slate-500 mt-1">카메라 켜기, 화면 공유, 스마트 칠판 판서 기능을 이용해보세요!</p>
                 </div>
 
-                <!-- 선생님 카메라 비디오 -->
+                <!-- 선생님 카메라 및 화면공유 비디오 -->
                 <video id="teacherVideo" autoplay playsinline muted class="hidden absolute inset-0 w-full h-full object-cover z-0"></video>
+                <!-- 학생들에게 송출되는 선생님 화면 이미지 (실시간 스트리밍) -->
+                <img id="studentRemoteVideo" class="hidden absolute inset-0 w-full h-full object-cover z-0" alt="선생님 송출 화면">
 
                 <!-- 스마트 판서 칠판 Canvas -->
                 <canvas id="whiteboardCanvas" class="hidden absolute inset-0 w-full h-full z-20 cursor-crosshair touch-none"></canvas>
@@ -420,7 +422,8 @@
             isSecretChat: false,
             customTeacherQuiz: null,
             localStream: null,
-            isBoardActive: false
+            isBoardActive: false,
+            videoInterval: null
         };
 
         function showToast(msg, isErr = false) {
@@ -499,11 +502,14 @@
                 document.getElementById('leaveBtnText').innerText = '라이브 방송 종료';
             } else {
                 document.getElementById('leaveBtnText').innerText = '라이브 나가기';
+                document.getElementById('studentRemoteVideo').classList.remove('hidden');
+                document.getElementById('defaultStageContent').classList.add('hidden');
             }
         }
 
         function leaveLiveRoom() {
             if (state.localStream) state.localStream.getTracks().forEach(t => t.stop());
+            if (state.videoInterval) clearInterval(state.videoInterval);
             location.reload();
         }
 
@@ -518,6 +524,8 @@
                     defaultContent.classList.add('hidden');
                     document.getElementById('camBtn').className = 'bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
                     document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video-slash"></i><span>카메라 끄기</span>';
+                    
+                    startTeacherStreaming(video);
                     showToast('📷 카메라가 켜졌습니다!');
                 } else {
                     state.localStream.getTracks().forEach(t => t.stop());
@@ -525,6 +533,7 @@
                     video.srcObject = null;
                     video.classList.add('hidden');
                     defaultContent.classList.remove('hidden');
+                    if (state.videoInterval) { clearInterval(state.videoInterval); state.videoInterval = null; }
                     document.getElementById('camBtn').className = 'bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
                     document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video"></i><span>카메라 켜기</span>';
                     showToast('카메라가 꺼졌습니다.');
@@ -542,16 +551,41 @@
                 video.srcObject = stream;
                 video.classList.remove('hidden');
                 defaultContent.classList.add('hidden');
+                startTeacherStreaming(video);
                 showToast('🖥️ 화면 공유가 시작되었습니다!');
                 stream.getVideoTracks()[0].onended = () => {
                     video.srcObject = null;
                     video.classList.add('hidden');
                     defaultContent.classList.remove('hidden');
+                    if (state.videoInterval) { clearInterval(state.videoInterval); state.videoInterval = null; }
                 };
             } catch {
                 showToast('화면 공유 취소', true);
             }
         }
+
+        function startTeacherStreaming(videoEl) {
+            if (state.videoInterval) clearInterval(state.videoInterval);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            state.videoInterval = setInterval(() => {
+                if (!videoEl.videoWidth) return;
+                canvas.width = 640;
+                canvas.height = 360;
+                ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+                const frameData = canvas.toDataURL('image/jpeg', 0.5);
+                socket.emit('stream_frame', { roomCode: state.roomCode, frame: frameData });
+            }, 100);
+        }
+
+        socket.on('stream_frame', ({ frame }) => {
+            if (!state.isTeacher) {
+                const remoteImg = document.getElementById('studentRemoteVideo');
+                remoteImg.classList.remove('hidden');
+                document.getElementById('defaultStageContent').classList.add('hidden');
+                remoteImg.src = frame;
+            }
+        });
 
         function toggleFullscreenStage() {
             const container = document.getElementById('stageContainer');
@@ -603,6 +637,10 @@
                 const y = (e.clientY || e.touches[0].clientY) - rect.top;
                 ctx.lineTo(x, y);
                 ctx.stroke();
+
+                if (state.isTeacher) {
+                    socket.emit('whiteboard_draw', { roomCode: state.roomCode, drawData: { type: 'draw', x, y, color: drawColor } });
+                }
             };
 
             const stopDraw = () => { isDrawing = false; };
@@ -617,8 +655,21 @@
             canvas.ontouchend = stopDraw;
         }
 
+        socket.on('whiteboard_draw', (data) => {
+            if (!state.isTeacher && ctx) {
+                if (data.type === 'clear') {
+                    ctx.clearRect(0, 0, 10000, 10000);
+                }
+            }
+        });
+
         function setDrawColor(col) { drawColor = col; if (ctx) ctx.strokeStyle = col; }
-        function clearWhiteboard() { if (ctx) ctx.clearRect(0, 0, 10000, 10000); }
+        function clearWhiteboard() {
+            if (ctx) ctx.clearRect(0, 0, 10000, 10000);
+            if (state.isTeacher) {
+                socket.emit('whiteboard_draw', { roomCode: state.roomCode, drawData: { type: 'clear' } });
+            }
+        }
 
         function uploadWhiteboardImage(e) {
             const file = e.target.files[0];
@@ -793,7 +844,7 @@
             }
 
             document.getElementById('earnModal').classList.add('hidden');
-            showToast('퀴즈 완료! 25초 동안 퀴즈 쿨타임이 시작됩니다.', !correct);
+            showToast('퀴즈 완료! 25초 동안 쿨타임이 시작됩니다.', !correct);
 
             state.quizCooldownUntil = Date.now() + 25000;
             const cdText = document.getElementById('quizCooldownText');
