@@ -32,13 +32,11 @@
         </div>
 
         <div class="flex items-center gap-2.5">
-            <!-- 라이브 나가기 / 방송 종료 버튼 -->
             <button id="leaveRoomBtn" onclick="leaveLiveRoom()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-2 rounded-xl transition border border-slate-700 flex items-center gap-1.5">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 <span id="leaveBtnText">라이브 나가기</span>
             </button>
 
-            <!-- 선생님 화면에 실시간 누적 후원 pt 표시 -->
             <div id="headerStats" class="hidden items-center gap-2 bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
                 <span class="text-red-400 font-bold"><i class="fa-solid fa-bell mr-1"></i><span id="subCount">124</span></span>
                 <span class="text-slate-600">|</span>
@@ -47,7 +45,6 @@
                 <span class="text-amber-400 font-black"><i class="fa-solid fa-gift mr-1"></i>선생님 누적후원: <span id="teacherTotalDonationDisplay">0</span>pt</span>
             </div>
 
-            <!-- 내 포인트 현황 (최대 3000pt 제한) -->
             <div class="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5">
                 <span class="text-slate-400">내 포인트:</span>
                 <span id="myBalance" class="font-black text-amber-400">300 pt</span>
@@ -55,13 +52,12 @@
         </div>
     </header>
 
-    <!-- 토스트 알림 메시지 상자 -->
     <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold bg-emerald-600 text-white">
         <i class="fa-solid fa-circle-check"></i>
         <span id="toastText">알림 메시지</span>
     </div>
 
-    <!-- 1. 초기 역할 선택 로비 화면 -->
+    <!-- 1. 초기 역할 선택 로비 -->
     <main id="lobbyView" class="flex-1 flex items-center justify-center p-4">
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
             <div class="text-center">
@@ -110,9 +106,8 @@
 
     <!-- 2. 메인 라이브 스튜디오 화면 -->
     <main id="studioView" class="hidden flex-1 max-w-[1550px] w-full mx-auto p-3 md:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <!-- 왼쪽: 영상 송출 및 제어 영역 (8칸) -->
         <div class="lg:col-span-8 flex flex-col gap-3">
-            <!-- 선생님 공지 (맨 위에 아주 크게 고정) -->
+            <!-- 공지 배너 -->
             <div id="pinnedNoticeBanner" class="hidden bg-gradient-to-r from-amber-600 to-orange-600 border-2 border-amber-300 rounded-3xl p-5 shadow-2xl flex items-center justify-between gap-4">
                 <div class="flex items-center gap-3 text-white">
                     <div class="w-12 h-12 rounded-2xl bg-black/30 flex items-center justify-center text-2xl flex-shrink-0">
@@ -128,24 +123,19 @@
                 </button>
             </div>
 
-            <!-- 영상 송출 및 스마트 칠판 스테이지 -->
+            <!-- 영상 및 칠판 스테이지 -->
             <div id="stageContainer" class="relative aspect-video bg-slate-900 rounded-3xl border border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl">
-                <!-- 기본 대기 화면 -->
                 <div id="defaultStageContent" class="text-center p-6 z-10">
                     <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500 text-2xl">
                         <i class="fa-solid fa-chalkboard-user"></i>
                     </div>
                     <p class="text-sm font-bold text-slate-300" id="studioMainTitle">선생님 라이브 방송 송출 화면</p>
-                    <p class="text-xs text-slate-500 mt-1">카메라 켜기, 화면 공유, 스마트 칠판 판서 기능을 이용해보세요!</p>
+                    <p class="text-xs text-slate-500 mt-1">카메라, 화면 공유, 스마트 칠판 판서 기능을 이용해보세요!</p>
                 </div>
 
-                <!-- 선생님 카메라 비디오 -->
                 <video id="teacherVideo" autoplay playsinline muted class="hidden absolute inset-0 w-full h-full object-cover z-0"></video>
-
-                <!-- 스마트 판서 칠판 Canvas -->
                 <canvas id="whiteboardCanvas" class="hidden absolute inset-0 w-full h-full z-25 cursor-crosshair"></canvas>
 
-                <!-- 칠판 도구 바 (선생님 전용) -->
                 <div id="whiteboardTools" class="hidden absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-slate-950/90 border border-slate-700 p-1.5 rounded-xl shadow-xl">
                     <button onclick="setDrawColor('#ffffff')" class="w-6 h-6 rounded-full bg-white border border-slate-600"></button>
                     <button onclick="setDrawColor('#facc15')" class="w-6 h-6 rounded-full bg-amber-400"></button>
@@ -154,7 +144,6 @@
                     <button onclick="clearWhiteboard()" class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold">지우기</button>
                 </div>
 
-                <!-- 후원 7000pt 벌칙 투표 배너 -->
                 <div id="penaltyVoteContainer" class="hidden absolute top-3 left-3 right-3 bg-slate-950/95 border border-amber-500 rounded-2xl p-3 z-30 shadow-2xl">
                     <div class="flex items-center justify-between text-xs mb-2">
                         <span class="font-black text-amber-400"><i class="fa-solid fa-crown mr-1"></i>후원 누적 7,000pt 돌파! 벌칙 투표 오픈!</span>
@@ -178,7 +167,6 @@
                         <span>좋아요</span>
                     </button>
 
-                    <!-- BGM 플레이어 -->
                     <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
                         <i class="fa-solid fa-music text-indigo-400 text-xs"></i>
                         <select id="bgmSelect" onchange="changeBgm()" class="bg-transparent text-xs text-slate-200 font-bold focus:outline-none">
@@ -190,7 +178,6 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- 선생님 미디어 & 칠판 버튼 -->
                     <button id="camBtn" onclick="toggleCamera()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md">
                         <i class="fa-solid fa-video"></i><span>카메라 켜기</span>
                     </button>
@@ -217,7 +204,7 @@
             </div>
         </div>
 
-        <!-- 오른쪽: 실시간 채팅 및 비밀채팅 (4칸) -->
+        <!-- 오른쪽: 실시간 댓글 -->
         <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[590px] lg:h-[660px] overflow-hidden shadow-2xl">
             <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
                 <div class="flex items-center gap-2">
@@ -233,19 +220,14 @@
             </div>
 
             <div id="chatBox" class="flex-1 p-3.5 overflow-y-auto chat-scroll space-y-2.5 text-xs">
-                <div class="text-center text-slate-500 py-2">실시간 채팅방입니다! (도배 방지 9초)</div>
+                <div class="text-center text-slate-500 py-2">실시간 채팅방입니다!</div>
             </div>
 
-            <!-- 스티커 서랍 -->
             <div id="stickerDrawer" class="hidden border-t border-slate-800 bg-slate-950 p-3 space-y-2">
                 <div class="flex items-center justify-between text-[11px]">
                     <span class="font-black text-amber-400"><i class="fa-solid fa-face-smile mr-1"></i>후원 해금 이모지 & GIF</span>
                 </div>
                 <div id="stickerGrid" class="grid grid-cols-4 gap-1.5"></div>
-            </div>
-
-            <div id="spamBar" class="hidden bg-red-600/20 border-t border-red-500/40 px-3 py-1.5 text-[11px] font-bold text-red-300 text-center">
-                🚫 도배 방지! <span id="spamSec">9</span>초 동안 채팅 금지
             </div>
 
             <form onsubmit="sendChat(event)" class="p-2.5 border-t border-slate-800 bg-slate-950 flex gap-1.5 items-center">
@@ -258,7 +240,7 @@
         </div>
     </main>
 
-    <!-- 포인트 얻기 모달 -->
+    <!-- 퀴즈 & 룰렛 모달 -->
     <div id="earnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between">
@@ -446,8 +428,15 @@
             showToast(msg, true);
         });
 
-        socket.on('join_success', ({ roomCode, title }) => {
+        socket.on('join_success', ({ roomCode, title, subscribers, likes, latestNotice, latestQuiz }) => {
             enterStudioMode(state.nickname, title, roomCode);
+            document.getElementById('subCount').innerText = subscribers;
+            document.getElementById('likeCount').innerText = likes;
+            if (latestNotice) {
+                document.getElementById('noticeBannerText').innerText = latestNotice;
+                document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
+            }
+            if (latestQuiz) state.customTeacherQuiz = latestQuiz;
             showToast('🎓 수업에 입장했습니다! (300pt)');
         });
 
@@ -543,9 +532,21 @@
             ctx.lineCap = 'round';
 
             canvas.onmousedown = (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); };
-            canvas.onmousemove = (e) => { if (!isDrawing) return; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); };
+            canvas.onmousemove = (e) => {
+                if (!isDrawing) return;
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+                socket.emit('whiteboard_draw', { roomCode: state.roomCode, drawData: { x: e.offsetX, y: e.offsetY, color: drawColor } });
+            };
             canvas.onmouseup = () => { isDrawing = false; };
         }
+
+        socket.on('whiteboard_draw', ({ x, y, color }) => {
+            if (!ctx) return;
+            ctx.strokeStyle = color;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        });
 
         function setDrawColor(col) { drawColor = col; if (ctx) ctx.strokeStyle = col; }
         function clearWhiteboard() { if (ctx) ctx.clearRect(0, 0, 10000, 10000); }
@@ -560,9 +561,7 @@
         }
 
         function toggleSubscribe() {
-            const btn = document.getElementById('subCount');
-            const count = parseInt(btn.innerText) + 1;
-            socket.emit('toggle_subscribe', { roomCode: state.roomCode, subscribed: true, nickname: state.nickname });
+            socket.emit('toggle_subscribe', { roomCode: state.roomCode, subscribed: true });
             showToast('구독 완료! 🔔');
         }
 
@@ -612,7 +611,10 @@
                 </button>
             `).join('');
         }
-        function sendSticker(icon) { appendChat(state.nickname, '[스티커]', icon); document.getElementById('stickerDrawer').classList.add('hidden'); }
+        function sendSticker(icon) {
+            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname, message: '[스티커]', icon, isSecret: state.isSecretChat });
+            document.getElementById('stickerDrawer').classList.add('hidden');
+        }
 
         function toggleSecretChatMode() {
             state.isSecretChat = !state.isSecretChat;
@@ -625,8 +627,13 @@
             const txt = input.value.trim();
             if (!txt) return;
             input.value = '';
-            appendChat(state.nickname, txt);
+            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname, message: txt, isSecret: state.isSecretChat });
         }
+
+        socket.on('new_chat', ({ sender, message, icon, isSecret }) => {
+            if (isSecret && !state.isTeacher && state.nickname !== sender && state.totalTeacherDonations < 100) return; // 비밀채팅 권한
+            appendChat(sender, message, icon);
+        });
 
         function appendChat(sender, msg, icon = null) {
             const box = document.getElementById('chatBox');
@@ -649,11 +656,10 @@
             const now = Date.now();
             if (now < state.quizCooldownUntil) {
                 const remain = Math.ceil((state.quizCooldownUntil - now) / 1000);
-                return showToast(`⏳ 쿨타임 중 (${remain}초)`, true);
+                return showToast(`⏳ 퀴즈 쿨타임 중 (${remain}초)`, true);
             }
 
             let item = state.customTeacherQuiz || QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)];
-            state.customTeacherQuiz = null;
             const opts = [...item.a].sort(() => Math.random() - 0.5);
             state.currentQuiz = { correct: item.a[0], opts };
             document.getElementById('qText').innerText = item.q;
@@ -705,10 +711,17 @@
             const w1 = document.getElementById('customQuizWrong1').value.trim() || '오답1';
             const w2 = document.getElementById('customQuizWrong2').value.trim() || '오답2';
             if (!q || !correct) return showToast('질문과 정답 입력 필요', true);
-            state.customTeacherQuiz = { s: '커스텀', q, a: [correct, w1, w2] };
+            const quizData = { s: '커스텀', q, a: [correct, w1, w2] };
+            socket.emit('teacher_quiz', { roomCode: state.roomCode, quizData });
+            state.customTeacherQuiz = quizData;
             document.getElementById('teacherQuizModal').classList.add('hidden');
-            showToast('퀴즈 출제 완료!');
+            showToast('선생님 퀴즈가 학생들에게 송출되었습니다!');
         }
+
+        socket.on('teacher_quiz', (quizData) => {
+            state.customTeacherQuiz = quizData;
+            showToast('🔔 선생님이 새로운 퀴즈를 출제했습니다!');
+        });
 
         function openTeacherNoticeModal() { if (state.isTeacher) document.getElementById('teacherNoticeModal').classList.remove('hidden'); }
         function publishTeacherNotice() {
@@ -741,9 +754,11 @@
         function openDonateModal() { document.getElementById('donateModal').classList.remove('hidden'); }
         function sendDonation() {
             const amt = parseInt(document.getElementById('dAmount').value);
+            const msg = document.getElementById('dMsg').value.trim() || '후원합니다!';
             if (state.balance < amt) return showToast('포인트 부족', true);
             state.balance -= amt; state.totalTeacherDonations += amt;
             updateUI();
+            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname, message: `🎁 ${amt}pt 후원: "${msg}"` });
             document.getElementById('donateModal').classList.add('hidden');
             showToast(`${amt}pt 후원 성공!`);
         }
