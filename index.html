@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>선생님 실시간 라이브 스튜디오 ULTIMATE PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
@@ -146,7 +147,7 @@
                 <!-- 선생님 카메라 비디오 -->
                 <video id="teacherVideo" autoplay playsinline muted class="hidden absolute inset-0 w-full h-full object-cover z-0"></video>
 
-                <!-- 스마트 판서 칠판 Canvas (제대로 그림 그리도록 z-index 및 pointer-events 설정) -->
+                <!-- 스마트 판서 칠판 Canvas -->
                 <canvas id="whiteboardCanvas" class="hidden absolute inset-0 w-full h-full z-20 cursor-crosshair touch-none"></canvas>
 
                 <!-- 칠판 도구 바 (선생님 전용) -->
@@ -269,7 +270,7 @@
         </div>
     </main>
 
-    <!-- 포인트 얻기 모달 (25초 쿨타임 후 자동 닫힘 + 룰렛 + 가위바위보) -->
+    <!-- 포인트 얻기 모달 -->
     <div id="earnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between">
@@ -368,7 +369,7 @@
         </div>
     </div>
 
-    <!-- 후원 모달 (내 기기 사진/영상 파일 직접 선택 기능 포함) -->
+    <!-- 후원 모달 -->
     <div id="donateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
             <h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>후원하기 (내 기기에서 사진/영상 첨부)</h3>
@@ -390,6 +391,8 @@
     </div>
 
     <script>
+        const socket = io();
+
         const STICKERS = [
             { id: 's1', req: 0, type: 'emoji', icon: '👍', label: '엄지척' },
             { id: 's3', req: 100, type: 'emoji', icon: '🔥', label: '100pt 열정' },
@@ -411,7 +414,6 @@
             nickname: '',
             balance: 300,
             totalTeacherDonations: 0,
-            chatCount: 0,
             lockUntil: 0,
             currentQuiz: null,
             quizCooldownUntil: 0,
@@ -448,8 +450,7 @@
             state.nickname = name;
             state.isTeacher = true;
 
-            enterStudioMode(name, title, roomCode);
-            showToast(`👨‍🏫 방 개설 완료! 참여 코드: ${roomCode}`);
+            socket.emit('create_room', { roomCode, teacherName: name, title });
         }
 
         function handleJoinStudent(e) {
@@ -461,9 +462,24 @@
             state.roomCode = roomCode;
             state.isTeacher = false;
 
-            enterStudioMode(nickname, '라이브 수업', roomCode);
-            showToast('🎓 수업에 입장했습니다! (300pt)');
+            socket.emit('join_room', { roomCode, nickname });
         }
+
+        socket.on('room_created', ({ roomCode, title }) => {
+            enterStudioMode(state.nickname, title, roomCode);
+            showToast(`👨‍🏫 방 개설 완료! 참여 코드: ${roomCode}`);
+        });
+
+        socket.on('join_success', ({ roomCode, title, subscribers, likes }) => {
+            document.getElementById('subCount').innerText = subscribers;
+            document.getElementById('likeCount').innerText = likes;
+            enterStudioMode(state.nickname, title, roomCode);
+            showToast('🎓 수업에 입장했습니다! (300pt)');
+        });
+
+        socket.on('join_error', (msg) => {
+            showToast(msg, true);
+        });
 
         function enterStudioMode(name, title, roomCode) {
             document.getElementById('lobbyView').classList.add('hidden');
@@ -629,15 +645,19 @@
         }
 
         function toggleSubscribe() {
-            updateUI();
+            socket.emit('toggle_subscribe', { roomCode: state.roomCode, subscribed: true });
             showToast('구독 완료! 🔔');
-            document.getElementById('subCount').innerText = parseInt(document.getElementById('subCount').innerText) + 1;
         }
 
         function addLike() {
-            document.getElementById('likeCount').innerText = parseInt(document.getElementById('likeCount').innerText) + 1;
+            socket.emit('add_like', { roomCode: state.roomCode });
             showToast('좋아요! ❤️');
         }
+
+        socket.on('stats_update', ({ subscribers, likes }) => {
+            document.getElementById('subCount').innerText = subscribers;
+            document.getElementById('likeCount').innerText = likes;
+        });
 
         let audioCtx, bgmTimer;
         function changeBgm() {
@@ -671,14 +691,16 @@
                 </button>
             `).join('');
         }
-        function sendSticker(icon) { appendChat(state.nickname || '나', `[스티커]`, icon); document.getElementById('stickerDrawer').classList.add('hidden'); }
+        function sendSticker(icon) {
+            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname || '나', message: '[스티커]', icon, isSecret: state.isSecretChat });
+            document.getElementById('stickerDrawer').classList.add('hidden');
+        }
 
         function toggleSecretChatMode() {
             state.isSecretChat = !state.isSecretChat;
             showToast(state.isSecretChat ? '비밀채팅 모드 ON' : '일반채팅 모드 ON');
         }
 
-        // 도배 방지 채팅 로직 (9초 쿨타임)
         function sendChat(e) {
             e.preventDefault();
             const now = Date.now();
@@ -692,9 +714,8 @@
             if (!txt) return;
             input.value = '';
 
-            appendChat(state.nickname || '나', txt);
+            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname || '나', message: txt, icon: null, isSecret: state.isSecretChat });
 
-            // 도배 방지 9초 설정
             state.lockUntil = now + 9000;
             const spamBar = document.getElementById('spamBar');
             const spamSec = document.getElementById('spamSec');
@@ -709,6 +730,19 @@
                 }
             }, 1000);
         }
+
+        socket.on('new_chat', ({ sender, message, icon }) => {
+            appendChat(sender, message, icon);
+        });
+
+        socket.on('system_message', (msg) => {
+            const box = document.getElementById('chatBox');
+            const div = document.createElement('div');
+            div.className = 'text-center text-slate-500 py-1 text-[11px] font-bold';
+            div.innerText = msg;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        });
 
         function appendChat(sender, msg, icon = null) {
             const box = document.getElementById('chatBox');
@@ -758,7 +792,6 @@
                 fb.innerText = `오답! 정답은 [${state.currentQuiz.correct}] 입니다.`;
             }
 
-            // 한번 풀면 걍 퀴즈 모달이 닫히고 25초 동안 재도전 불가
             document.getElementById('earnModal').classList.add('hidden');
             showToast('퀴즈 완료! 25초 동안 퀴즈 쿨타임이 시작됩니다.', !correct);
 
@@ -815,8 +848,19 @@
             document.getElementById('noticeBannerText').innerText = txt;
             document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
             document.getElementById('teacherNoticeModal').classList.add('hidden');
+            socket.emit('live_event', { roomCode: state.roomCode, type: 'notice', message: txt });
             showToast('공지 등록 완료!');
         }
+
+        socket.on('live_event', (payload) => {
+            if (payload.type === 'notice') {
+                document.getElementById('noticeBannerText').innerText = payload.message;
+                document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
+            }
+            if (payload.type === 'donation_alert') {
+                triggerDonationAlert(payload.donator, payload.amt, payload.msg, payload.mediaSrc, payload.isVideo);
+            }
+        });
 
         function openPenaltyVoteModal() {
             document.getElementById('penaltyListContainer').innerHTML = PENALTIES_50.map(p => `
@@ -829,8 +873,7 @@
         function submitPenaltyVote() { document.getElementById('penaltyVoteModal').classList.add('hidden'); showToast('투표 완료!'); }
 
         function openDonateModal() { document.getElementById('donateModal').classList.remove('hidden'); }
-        
-        // 후원 전송 및 화면 팝업 + TTS 음성 읽어주기 (내 기기 파일 첨부 지원)
+
         function sendDonation() {
             const amt = parseInt(document.getElementById('dAmount').value);
             const msg = document.getElementById('dMsg').value.trim() || '후원합니다!';
@@ -848,24 +891,25 @@
                     const resultUrl = e.target.result;
                     const isVideo = fileInput.files[0].type.startsWith('video');
                     triggerDonationAlert(state.nickname || '학생', amt, msg, resultUrl, isVideo);
+                    socket.emit('live_event', { roomCode: state.roomCode, type: 'donation_alert', donator: state.nickname || '학생', amt, msg, mediaSrc: resultUrl, isVideo });
                 };
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
                 triggerDonationAlert(state.nickname || '학생', amt, msg, null, false);
+                socket.emit('live_event', { roomCode: state.roomCode, type: 'donation_alert', donator: state.nickname || '학생', amt, msg, mediaSrc: null, isVideo: false });
             }
             
-            // TTS 음성 읽어주기
             if ('speechSynthesis' in window) {
                 const speech = new SpeechSynthesisUtterance(`${state.nickname || '학생'}님이 ${amt}포인트를 후원하셨습니다. 메시지: ${msg}`);
                 speech.lang = 'ko-KR';
                 window.speechSynthesis.speak(speech);
             }
 
-            appendChat(state.nickname || '학생', `🎁 ${amt}pt 후원: "${msg}"`);
+            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname || '학생', message: `🎁 ${amt}pt 후원: "${msg}"`, icon: null });
             showToast(`${amt}pt 후원 성공!`);
         }
 
-    function triggerDonationAlert(donator, amt, msg, mediaSrc, isVideo) {
+        function triggerDonationAlert(donator, amt, msg, mediaSrc, isVideo) {
             document.getElementById('alertDonatorName').innerText = `${donator}님이 ${amt}pt를 후원하셨습니다!`;
             document.getElementById('alertDonationMsg').innerText = `"${msg}"`;
             
