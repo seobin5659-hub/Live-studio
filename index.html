@@ -1,1497 +1,636 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>선생님 실시간 라이브 스튜디오 ULTIMATE PRO</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .chat-scroll::-webkit-scrollbar { width: 5px; }
-        .chat-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        @keyframes popIn {
-            0% { transform: scale(0.7) translateY(20px); opacity: 0; }
-            70% { transform: scale(1.05) translateY(0); opacity: 1; }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-        .donation-pop { animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes gifWiggle {
-            0%, 100% { transform: rotate(-6deg) scale(1); }
-            50% { transform: rotate(6deg) scale(1.12); }
-        }
-        .gif-anim { display: inline-block; animation: gifWiggle 0.8s infinite ease-in-out; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>선생님 실시간 라이브 스튜디오 PRO</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Inter', sans-serif; }
+.chat-scroll::-webkit-scrollbar { width: 5px; }
+.chat-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+</style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
-
-    <!-- 상단 내비게이션 바 -->
-    <header class="h-16 border-b border-slate-800 bg-slate-900/95 px-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
-        <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
-                <i class="fa-solid fa-tower-broadcast text-white"></i>
-            </div>
-            <div>
-                <h1 class="font-black text-sm text-white flex items-center gap-2">
-                    실시간 라이브 스튜디오
-                    <span id="liveBadge" class="hidden px-2 py-0.5 text-[10px] font-black bg-red-600 text-white rounded-full animate-pulse">LIVE</span>
-                </h1>
-                <p id="headerSubtitle" class="text-[11px] text-slate-400">카메라, 화면공유, 스마트 칠판 완벽 지원</p>
-            </div>
-        </div>
-
-        <div class="flex items-center gap-2.5">
-            <!-- 라이브 나가기 버튼 -->
-            <button id="leaveRoomBtn" onclick="leaveLiveRoom()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-2 rounded-xl transition border border-slate-700 flex items-center gap-1.5">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                <span>라이브 나가기</span>
-            </button>
-
-            <!-- 선생님 화면에 실시간 누적 후원 pt 표시 -->
-            <div id="headerStats" class="hidden items-center gap-2 bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
-                <span class="text-red-400 font-bold"><i class="fa-solid fa-bell mr-1"></i><span id="subCount">124</span></span>
-                <span class="text-slate-600">|</span>
-                <span class="text-pink-400 font-bold"><i class="fa-solid fa-thumbs-up mr-1"></i><span id="likeCount">0</span></span>
-                <span class="text-slate-600">|</span>
-                <span class="text-amber-400 font-black"><i class="fa-solid fa-gift mr-1"></i>선생님 누적후원: <span id="teacherTotalDonationDisplay">0</span>pt</span>
-            </div>
-
-            <!-- 내 포인트 현황 (최대 3000pt 제한) -->
-            <div class="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5">
-                <span class="text-slate-400">내 포인트:</span>
-                <span id="myBalance" class="font-black text-amber-400">300 pt</span>
-            </div>
-        </div>
-    </header>
-
-    <!-- 토스트 알림 메시지 상자 -->
-    <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold bg-emerald-600 text-white">
-        <i class="fa-solid fa-circle-check"></i>
-        <span id="toastText">알림 메시지</span>
-    </div>
-
-    <!-- 1. 초기 역할 선택 로비 화면 -->
-    <main id="lobbyView" class="flex-1 flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
-            <div class="text-center">
-                <h2 class="text-base font-black text-white">📡 라이브 스튜디오 역할 선택</h2>
-                <p class="text-xs text-slate-400 mt-1">선생님은 방 개설, 학생은 6자리 코드로 입장하세요.</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-2xl border border-slate-800">
-                <button type="button" id="tabTeacher" onclick="switchLobbyRole('teacher')" class="py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition">
-                    👨‍🏫 선생님 (방 개설)
-                </button>
-                <button type="button" id="tabStudent" onclick="switchLobbyRole('student')" class="py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition">
-                    🎓 학생 (참여)
-                </button>
-            </div>
-
-            <form id="teacherLobbyForm" onsubmit="handleStartTeacher(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1.5">선생님 성함</label>
-                    <input type="text" id="tNameInput" value="김선생님" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1.5">수업 방송 제목</label>
-                    <input type="text" id="tTitleInput" value="비상 사회 라이브 스튜디오" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-indigo-500">
-                </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg transition">
-                    라이브 방 개설하고 입장하기
-                </button>
-            </form>
-
-            <form id="studentLobbyForm" onsubmit="handleJoinStudent(event)" class="hidden space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1.5">내 닉네임</label>
-                    <input type="text" id="sNicknameInput" placeholder="예: 홍길동" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1.5">참여 코드 (6자리)</label>
-                    <input type="text" id="sRoomCodeInput" placeholder="예: 123456" maxlength="6" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-center font-mono font-black text-emerald-400 tracking-widest text-base focus:outline-none focus:border-emerald-500">
-                </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg transition">
-                    수업 입장하기 (300pt 지급)
-                </button>
-            </form>
-        </div>
-    </main>
-
-    <!-- 2. 메인 라이브 스튜디오 화면 -->
-    <main id="studioView" class="hidden flex-1 max-w-[1550px] w-full mx-auto p-3 md:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <!-- 왼쪽: 영상 송출 및 제어 영역 (8칸) -->
-        <div class="lg:col-span-8 flex flex-col gap-3">
-            <!-- 선생님 공지 (맨 위에 아주 크게 고정) -->
-            <div id="pinnedNoticeBanner" class="hidden bg-gradient-to-r from-amber-600 to-orange-600 border-2 border-amber-300 rounded-3xl p-5 shadow-2xl flex items-center justify-between gap-4">
-                <div class="flex items-center gap-3 text-white">
-                    <div class="w-12 h-12 rounded-2xl bg-black/30 flex items-center justify-center text-2xl flex-shrink-0">
-                        <i class="fa-solid fa-bullhorn text-amber-300"></i>
-                    </div>
-                    <div>
-                        <div class="text-[11px] font-black text-amber-200 tracking-wider">📢 선생님 긴급 중요 공지</div>
-                        <div id="noticeBannerText" class="text-base md:text-xl font-black mt-0.5 leading-snug">공지 내용이 여기에 크게 표시됩니다.</div>
-                    </div>
-                </div>
-                <button onclick="document.getElementById('pinnedNoticeBanner').classList.add('hidden')" class="text-amber-200 hover:text-white p-2 text-sm">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <!-- 영상 송출 및 스마트 칠판 스테이지 -->
-            <div id="stageContainer" class="relative aspect-video bg-slate-900 rounded-3xl border border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl">
-                <!-- 기본 대기 화면 -->
-                <div id="defaultStageContent" class="text-center p-6 z-10">
-                    <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500 text-2xl">
-                        <i class="fa-solid fa-chalkboard-user"></i>
-                    </div>
-                    <p class="text-sm font-bold text-slate-300" id="studioMainTitle">선생님 라이브 방송 송출 화면</p>
-                    <p class="text-xs text-slate-500 mt-1">카메라 켜기, 화면 공유, 스마트 칠판 판서 기능을 이용해보세요!</p>
-                </div>
-
-                <!-- 선생님 카메라 비디오 -->
-                <video id="teacherVideo" autoplay playsinline muted class="hidden absolute inset-0 w-full h-full object-cover z-0"></video>
-
-                <!-- 스마트 판서 칠판 Canvas -->
-                <canvas id="whiteboardCanvas" class="hidden absolute inset-0 w-full h-full z-25 cursor-crosshair"></canvas>
-
-                <!-- 칠판 도구 바 (선생님 전용) -->
-                <div id="whiteboardTools" class="hidden absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-slate-950/90 border border-slate-700 p-1.5 rounded-xl shadow-xl">
-                    <button onclick="setDrawColor('#ffffff')" class="w-6 h-6 rounded-full bg-white border border-slate-600"></button>
-                    <button onclick="setDrawColor('#facc15')" class="w-6 h-6 rounded-full bg-amber-400"></button>
-                    <button onclick="setDrawColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500"></button>
-                    <button onclick="setDrawColor('#38bdf8')" class="w-6 h-6 rounded-full bg-sky-400"></button>
-                    <button onclick="clearWhiteboard()" class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold">지우기</button>
-                </div>
-
-                <!-- 후원 7000pt 벌칙 투표 배너 -->
-                <div id="penaltyVoteContainer" class="hidden absolute top-3 left-3 right-3 bg-slate-950/95 border border-amber-500 rounded-2xl p-3 z-30 shadow-2xl">
-                    <div class="flex items-center justify-between text-xs mb-2">
-                        <span class="font-black text-amber-400"><i class="fa-solid fa-crown mr-1"></i>후원 누적 7,000pt 돌파! 벌칙 투표 오픈!</span>
-                        <span id="penaltyGaugeText" class="text-slate-300 font-bold">현재 7,000 / 7,000pt</span>
-                    </div>
-                    <button onclick="openPenaltyVoteModal()" class="w-full bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 text-white font-black py-2.5 rounded-xl text-xs shadow-md">
-                        🔥 50가지 벌칙 후보 중 1개 골라서 투표하기!
-                    </button>
-                </div>
-            </div>
-
-            <!-- 하단 컨트롤 바 -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5">
-                <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="toggleSubscribe()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-bell"></i>
-                        <span>구독</span>
-                    </button>
-                    <button onclick="addLike()" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-400 text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-thumbs-up"></i>
-                        <span>좋아요</span>
-                    </button>
-
-                    <!-- BGM 플레이어 -->
-                    <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
-                        <i class="fa-solid fa-music text-indigo-400 text-xs"></i>
-                        <select id="bgmSelect" onchange="changeBgm()" class="bg-transparent text-xs text-slate-200 font-bold focus:outline-none">
-                            <option value="none" class="bg-slate-900">노래 끄기</option>
-                            <option value="happy" class="bg-slate-900">🎵 신나는 수업 BGM</option>
-                            <option value="lofi" class="bg-slate-900">☕ 집중 로파이</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                    <!-- 선생님 미디어 & 칠판 버튼 -->
-                    <button id="camBtn" onclick="toggleCamera()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-video"></i><span>카메라 켜기</span>
-                    </button>
-                    <button id="screenBtn" onclick="toggleScreenShare()" class="hidden bg-blue-600 hover:bg-blue-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-desktop"></i><span>화면 공유</span>
-                    </button>
-                    <button id="boardBtn" onclick="toggleWhiteboard()" class="hidden bg-amber-600 hover:bg-amber-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-chalkboard"></i><span>스마트 칠판</span>
-                    </button>
-
-                    <button onclick="openEarnModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-lg">
-                        <i class="fa-solid fa-coins"></i><span>퀴즈 & 룰렛 (+/-)</span>
-                    </button>
-                    <button id="teacherQuizBtn" onclick="openTeacherQuizModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-pen-to-square"></i><span>퀴즈 출제</span>
-                    </button>
-                    <button id="teacherNoticeBtn" onclick="openTeacherNoticeModal()" class="hidden bg-amber-600 hover:bg-amber-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-bullhorn"></i><span>공지</span>
-                    </button>
-                    <button onclick="openDonateModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 text-slate-950 text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-gift"></i><span>후원</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 오른쪽: 실시간 채팅 및 비밀채팅 (4칸) -->
-        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[590px] lg:h-[660px] overflow-hidden shadow-2xl">
-            <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-comments text-indigo-400"></i>
-                    <h2 id="chatTitleLabel" class="font-black text-sm text-white">실시간 라이브 댓글</h2>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="toggleSecretChatMode()" id="secretChatBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-700">
-                        🔒 비밀채팅
-                    </button>
-                    <span id="unlockBadge" class="text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">후원 0pt</span>
-                </div>
-            </div>
-
-            <div id="chatBox" class="flex-1 p-3.5 overflow-y-auto chat-scroll space-y-2.5 text-xs">
-                <div class="text-center text-slate-500 py-2">실시간 채팅방입니다! (도배 방지 9초)</div>
-            </div>
-
-            <!-- 스티커 서랍 -->
-            <div id="stickerDrawer" class="hidden border-t border-slate-800 bg-slate-950 p-3 space-y-2">
-                <div class="flex items-center justify-between text-[11px]">
-                    <span class="font-black text-amber-400"><i class="fa-solid fa-face-smile mr-1"></i>후원 해금 이모지 & GIF</span>
-                </div>
-                <div id="stickerGrid" class="grid grid-cols-4 gap-1.5"></div>
-            </div>
-
-            <div id="spamBar" class="hidden bg-red-600/20 border-t border-red-500/40 px-3 py-1.5 text-[11px] font-bold text-red-300 text-center">
-                🚫 도배 방지! <span id="spamSec">9</span>초 동안 채팅 금지
-            </div>
-
-            <form onsubmit="sendChat(event)" class="p-2.5 border-t border-slate-800 bg-slate-950 flex gap-1.5 items-center">
-                <button type="button" onclick="toggleStickers()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 px-3 py-2.5 rounded-xl text-xs font-bold">
-                    <i class="fa-solid fa-icons"></i>
-                </button>
-                <input type="text" id="chatInput" placeholder="댓글 입력..." autocomplete="off" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold">전송</button>
-            </form>
-        </div>
-    </main>
-
-    <!-- 포인트 얻기 모달 (25초 쿨타임 퀴즈 + 200pt 룰렛 + 가위바위보 -200pt) -->
-    <div id="earnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-coins text-amber-400 mr-2"></i>포인트 얻기 (최대 3000pt)</h3>
-                <button onclick="document.getElementById('earnModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-[11px] font-bold">
-                <button type="button" id="tabQuizBtn" onclick="switchEarn('quiz')" class="py-2 rounded-xl bg-indigo-600 text-white">📚 퀴즈 (25초 쿨타임)</button>
-                <button type="button" id="tabRouletteBtn" onclick="switchEarn('roulette')" class="py-2 rounded-xl text-slate-400">🎰 200pt 룰렛 (+/-)</button>
-                <button type="button" id="tabRpsBtn" onclick="switchEarn('rps')" class="py-2 rounded-xl text-slate-400">✊ 가위바위보 (-200)</button>
-            </div>
-
-            <div id="quizSection" class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <select id="subjectFilter" onchange="nextQuiz()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-indigo-300 focus:outline-none">
-                        <option value="all">전체 과목 랜덤</option>
-                        <option value="사회">🌍 비상 중1 사회</option>
-                        <option value="과학">🔬 중1 과학</option>
-                        <option value="수학">📐 중1 수학</option>
-                    </select>
-                    <span id="quizCooldownText" class="text-xs text-amber-400 font-bold hidden">⏳ 쿨타임 (25초)</span>
-                </div>
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
-                    <span id="quizTag" class="text-[11px] font-black text-indigo-400 bg-indigo-500/15 px-2.5 py-0.5 rounded-full">사회</span>
-                    <p id="qText" class="text-sm font-bold text-white leading-relaxed">문제를 불러오는 중...</p>
-                    <div id="qOptions" class="space-y-2 pt-1"></div>
-                </div>
-                <div id="qFeedback" class="hidden p-3 rounded-xl text-xs font-bold text-center"></div>
-                <button onclick="nextQuiz()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs">다음 문제</button>
-            </div>
-
-            <div id="rouletteSection" class="hidden space-y-4 text-center">
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
-                    <p class="text-xs text-slate-400 font-bold">비용: <span class="text-amber-400">200 pt</span> (+와 - 모두 존재)</p>
-                    <div id="rouletteWheelBox" class="w-36 h-36 mx-auto rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-amber-500 flex items-center justify-center text-3xl text-white shadow-2xl transition-transform duration-700">🎰</div>
-                    <p id="rouletteResultText" class="text-sm font-black text-indigo-300">버튼을 눌러 돌리세요!</p>
-                </div>
-                <button onclick="spinRoulette()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-2xl text-sm shadow-xl">200pt 내고 룰렛 돌리기</button>
-            </div>
-
-            <div id="rpsSection" class="hidden space-y-4 text-center">
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3">
-                    <p class="text-xs text-slate-400 font-bold">패배 시 <span class="text-red-400">-200 pt 감점</span></p>
-                    <div class="flex items-center justify-center gap-6 py-3">
-                        <div><div id="rpsMyHand" class="text-5xl mb-1">❓</div><span class="text-[11px] text-slate-400">나</span></div>
-                        <span class="text-lg font-black text-slate-600">VS</span>
-                        <div><div id="rpsBotHand" class="text-5xl mb-1">🤖</div><span class="text-[11px] text-slate-400">AI</span></div>
-                    </div>
-                    <p id="rpsResultText" class="text-sm font-black text-indigo-300">가위, 바위, 보 선택!</p>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="playRps('가위')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black">✌️ 가위</button>
-                    <button onclick="playRps('바위')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black">✊ 바위</button>
-                    <button onclick="playRps('보')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black">🖐️ 보</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 선생님 퀴즈 만들기 모달 -->
-    <div id="teacherQuizModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-pen-to-square text-purple-400 mr-2"></i>선생님 퀴즈 출제</h3>
-                <button onclick="document.getElementById('teacherQuizModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <input type="text" id="customQuizQ" placeholder="질문 입력" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white">
-            <input type="text" id="customQuizCorrect" placeholder="정답 입력" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white">
-            <div class="grid grid-cols-2 gap-2">
-                <input type="text" id="customQuizWrong1" placeholder="오답 1" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white">
-                <input type="text" id="customQuizWrong2" placeholder="오답 2" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white">
-            </div>
-            <button onclick="publishTeacherQuiz()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-3.5 rounded-xl text-sm">퀴즈 송출하기</button>
-        </div>
-    </div>
-
-    <!-- 선생님 공지 모달 -->
-    <div id="teacherNoticeModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-bullhorn text-amber-400 mr-2"></i>선생님 공지</h3>
-                <button onclick="document.getElementById('teacherNoticeModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <textarea id="customNoticeText" rows="3" placeholder="공지 내용" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white"></textarea>
-            <button onclick="publishTeacherNotice()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3.5 rounded-xl text-sm">공지 띄우기</button>
-        </div>
-    </div>
-
-    <!-- 50가지 벌칙 투표 모달 -->
-    <div id="penaltyVoteModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
-            <h3 class="font-black text-base text-white"><i class="fa-solid fa-gavel text-red-500 mr-2"></i>50가지 벌칙 투표</h3>
-            <div id="penaltyListContainer" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
-            <button onclick="submitPenaltyVote()" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl text-sm">최종 투표하기</button>
-        </div>
-    </div>
-
-    <!-- 후원 모달 -->
-    <div id="donateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
-            <h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>후원하기</h3>
-            <select id="dAmount" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
-                <option value="100">100 pt</option>
-                <option value="500">500 pt</option>
-                <option value="1000" selected>1000 pt</option>
-                <option value="3000">3000 pt (후원 게이지 폭발!)</option>
-            </select>
-            <input type="text" id="dMsg" placeholder="응원 메시지" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
-            <button onclick="sendDonation()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-xl text-sm">후원 보내기</button>
-        </div>
-    </div>
-
-    <script>
-        const STICKERS = [
-            { id: 's1', req: 0, type: 'emoji', icon: '👍', label: '엄지척' },
-            { id: 's3', req: 100, type: 'emoji', icon: '🔥', label: '100pt 열정' },
-            { id: 's5', req: 300, type: 'emoji', icon: '💖', label: '300pt 하트' },
-            { id: 's8', req: 1000, type: 'gif', icon: '👑', label: '1000pt 왕관' }
-        ];
-
-        const PENALTIES_50 = Array.from({length: 50}, (_, i) => `${i+1}. 벌칙 미션 수행하기 (${i+1}번)`);
-        const QUIZ_BANK = [
-            { s: '사회', q: '한 사회의 구성원들이 공유하는 생활 양식의 총체를 무엇이라고 하는가?', a: ['문화', '자연환경', '유전', '본능'] },
-            { s: '과학', q: '지구 내부 구조 중 부피가 가장 큰 층은?', a: ['맨틀', '지각', '외핵', '내핵'] },
-            { s: '수학', q: '1보다 큰 자연수 중 1과 자기 자신만을 약수로 가지는 수는?', a: ['소수', '합성수', '음수', '무리수'] }
-        ];
-
-        let state = {
-            role: 'student',
-            isTeacher: false,
-            roomCode: null,
-            balance: 300,
-            totalTeacherDonations: 0,
-            chatCount: 0,
-            lockUntil: 0,
-            currentQuiz: null,
-            answered: false,
-            quizCooldownUntil: 0,
-            isSecretChat: false,
-            customTeacherQuiz: null,
-            localStream: null,
-            isBoardActive: false
-        };
-
-        function showToast(msg, isErr = false) {
-            const t = document.getElementById('toast');
-            document.getElementById('toastText').innerText = msg;
-            t.className = `fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold ${isErr ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3000);
-        }
-
-        function switchLobbyRole(role) {
-            const isTeacher = role === 'teacher';
-            state.role = role;
-            state.isTeacher = isTeacher;
-            document.getElementById('tabTeacher').className = isTeacher ? 'py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition' : 'py-2.5 rounded-xl text-xs font-bold text-slate-400';
-            document.getElementById('tabStudent').className = !isTeacher ? 'py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white transition' : 'py-2.5 rounded-xl text-xs font-bold text-slate-400';
-            document.getElementById('teacherLobbyForm').classList.toggle('hidden', !isTeacher);
-            document.getElementById('studentLobbyForm').classList.toggle('hidden', isTeacher);
-        }
-
-        function handleStartTeacher(e) {
-            e.preventDefault();
-            const name = document.getElementById('tNameInput').value.trim() || '김선생님';
-            const title = document.getElementById('tTitleInput').value.trim() || '라이브 수업';
-            const roomCode = String(Math.floor(100000 + Math.random() * 900000));
-            state.roomCode = roomCode;
-            state.isTeacher = true;
-
-            enterStudioMode(name, title, roomCode);
-            showToast(`👨‍🏫 방 개설 완료! 참여 코드: ${roomCode}`);
-        }
-
-        function handleJoinStudent(e) {
-            e.preventDefault();
-            const nickname = document.getElementById('sNicknameInput').value.trim();
-            const roomCode = document.getElementById('sRoomCodeInput').value.trim();
-            if (!nickname || roomCode.length !== 6) return showToast('코드 6자리를 확인하세요.', true);
-            state.roomCode = roomCode;
-            state.isTeacher = false;
-
-            enterStudioMode(nickname, '라이브 수업', roomCode);
-            showToast('🎓 수업에 입장했습니다! (300pt)');
-        }
-
-        function enterStudioMode(name, title, roomCode) {
-            document.getElementById('lobbyView').classList.add('hidden');
-            document.getElementById('studioView').classList.remove('hidden');
-            document.getElementById('headerStats').classList.remove('hidden');
-            document.getElementById('liveBadge').classList.remove('hidden');
-            document.getElementById('leaveRoomBtn').classList.remove('hidden');
-            document.getElementById('headerSubtitle').innerText = `코드: ${roomCode}`;
-            document.getElementById('studioMainTitle').innerText = title;
-
-            if (state.isTeacher) {
-                document.getElementById('teacherQuizBtn').classList.remove('hidden');
-                document.getElementById('teacherNoticeBtn').classList.remove('hidden');
-                document.getElementById('camBtn').classList.remove('hidden');
-                document.getElementById('screenBtn').classList.remove('hidden');
-                document.getElementById('boardBtn').classList.remove('hidden');
-            }
-        }
-
-        function leaveLiveRoom() {
-            if (state.localStream) state.localStream.getTracks().forEach(t => t.stop());
-            location.reload();
-        }
-
-        // 카메라 켜기
-        async function toggleCamera() {
-            const video = document.getElementById('teacherVideo');
-            const defaultContent = document.getElementById('defaultStageContent');
-            try {
-                if (!state.localStream) {
-                    state.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                    video.srcObject = state.localStream;
-                    video.classList.remove('hidden');
-                    defaultContent.classList.add('hidden');
-                    document.getElementById('camBtn').className = 'bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
-                    document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video-slash"></i><span>카메라 끄기</span>';
-                    showToast('📷 카메라가 켜졌습니다!');
-                } else {
-                    state.localStream.getTracks().forEach(t => t.stop());
-                    state.localStream = null;
-                    video.srcObject = null;
-                    video.classList.add('hidden');
-                    defaultContent.classList.remove('hidden');
-                    document.getElementById('camBtn').className = 'bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
-                    document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video"></i><span>카메라 켜기</span>';
-                    showToast('카메라가 꺼졌습니다.');
-                }
-            } catch {
-                showToast('카메라 권한을 허용해주세요.', true);
-            }
-        }
-
-        // 화면 공유
-        async function toggleScreenShare() {
-            const video = document.getElementById('teacherVideo');
-            const defaultContent = document.getElementById('defaultStageContent');
-            try {
-                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                video.srcObject = stream;
-                video.classList.remove('hidden');
-                defaultContent.classList.add('hidden');
-                showToast('🖥️ 화면 공유가 시작되었습니다!');
-                stream.getVideoTracks()[0].onended = () => {
-                    video.srcObject = null;
-                    video.classList.add('hidden');
-                    defaultContent.classList.remove('hidden');
-                };
-            } catch {
-                showToast('화면 공유 취소', true);
-            }
-        }
-
-        // 스마트 칠판
-        function toggleWhiteboard() {
-            state.isBoardActive = !state.isBoardActive;
-            const canvas = document.getElementById('whiteboardCanvas');
-            const tools = document.getElementById('whiteboardTools');
-            canvas.classList.toggle('hidden', !state.isBoardActive);
-            tools.classList.toggle('hidden', !state.isBoardActive);
-
-            if (state.isBoardActive) {
-                initWhiteboard();
-                showToast('🖍️ 스마트 칠판이 열렸습니다!');
-            } else {
-                showToast('칠판이 닫혔습니다.');
-            }
-        }
-
-        let ctx, isDrawing = false, drawColor = '#ffffff';
-        function initWhiteboard() {
-            const canvas = document.getElementById('whiteboardCanvas');
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-            ctx = canvas.getContext('2d');
-            ctx.strokeStyle = drawColor;
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round';
-
-            canvas.onmousedown = (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); };
-            canvas.onmousemove = (e) => { if (!isDrawing) return; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); };
-            canvas.onmouseup = () => { isDrawing = false; };
-        }
-
-        function setDrawColor(col) { drawColor = col; if (ctx) ctx.strokeStyle = col; }
-        function clearWhiteboard() { if (ctx) ctx.clearRect(0, 0, 10000, 10000); }
-
-        function updateUI() {
-            if (state.balance > 3000) state.balance = 3000;
-            document.getElementById('myBalance').innerText = `${state.balance} pt`;
-            document.getElementById('unlockBadge').innerText = `후원 ${state.totalTeacherDonations}pt`;
-            document.getElementById('teacherTotalDonationDisplay').innerText = state.totalTeacherDonations;
-            if (state.totalTeacherDonations >= 7000) document.getElementById('penaltyVoteContainer').classList.remove('hidden');
-            renderStickers();
-        }
-
-        function toggleSubscribe() {
-            updateUI();
-            showToast('구독 완료! 🔔');
-            document.getElementById('subCount').innerText = parseInt(document.getElementById('subCount').innerText) + 1;
-        }
-
-        function addLike() {
-            document.getElementById('likeCount').innerText = parseInt(document.getElementById('likeCount').innerText) + 1;
-            showToast('좋아요! ❤️');
-        }
-
-        let audioCtx, bgmTimer;
-        function changeBgm() {
-            const mode = document.getElementById('bgmSelect').value;
-            if (bgmTimer) { clearInterval(bgmTimer); bgmTimer = null; }
-            if (mode === 'none') return showToast('BGM 종료');
-            showToast('🎵 BGM 재생!');
-            const notes = [261.63, 329.63, 392.00, 523.25];
-            let step = 0;
-            bgmTimer = setInterval(() => {
-                try {
-                    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.frequency.setValueAtTime(notes[step % notes.length], audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
-                    osc.connect(gain); gain.connect(audioCtx.destination);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-                    step++;
-                } catch {}
-            }, 300);
-        }
-
-        function toggleStickers() { document.getElementById('stickerDrawer').classList.toggle('hidden'); }
-        function renderStickers() {
-            document.getElementById('stickerGrid').innerHTML = STICKERS.map(st => `
-                <button onclick="sendSticker('${st.icon}')" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-center">
-                    <span class="text-xl">${st.icon}</span>
-                    <span class="block text-[9px] text-amber-300">${st.label}</span>
-                </button>
-            `).join('');
-        }
-        function sendSticker(icon) { appendChat('나', `[스티커]`, icon, 'emoji'); document.getElementById('stickerDrawer').classList.add('hidden'); }
-
-        function toggleSecretChatMode() {
-            state.isSecretChat = !state.isSecretChat;
-            showToast(state.isSecretChat ? '비밀채팅 모드 ON' : '일반채팅 모드 ON');
-        }
-
-        function sendChat(e) {
-            e.preventDefault();
-            const input = document.getElementById('chatInput');
-            const txt = input.value.trim();
-            if (!txt) return;
-            input.value = '';
-            appendChat('나', txt);
-        }
-
-        function appendChat(sender, msg, icon = null) {
-            const box = document.getElementById('chatBox');
-            const div = document.createElement('div');
-            div.className = 'p-2.5 rounded-2xl bg-slate-800/80 text-xs';
-            div.innerHTML = `<span class="font-bold text-emerald-400">${escapeHtml(sender)}</span>: <span class="text-slate-100">${escapeHtml(msg)} ${icon || ''}</span>`;
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
-        }
-
-        function openEarnModal() { document.getElementById('earnModal').classList.remove('hidden'); switchEarn('quiz'); }
-        function switchEarn(tab) {
-            document.getElementById('quizSection').classList.toggle('hidden', tab !== 'quiz');
-            document.getElementById('rouletteSection').classList.toggle('hidden', tab !== 'roulette');
-            document.getElementById('rpsSection').classList.toggle('hidden', tab !== 'rps');
-            if (tab === 'quiz' && !state.currentQuiz) nextQuiz();
-        }
-
-        function nextQuiz() {
-            const now = Date.now();
-            if (now < state.quizCooldownUntil) {
-                const remain = Math.ceil((state.quizCooldownUntil - now) / 1000);
-                return showToast(`⏳ 쿨타임 중 (${remain}초)`, true);
-            }
-
-            let item = state.customTeacherQuiz || QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)];
-            state.customTeacherQuiz = null;
-            const opts = [...item.a].sort(() => Math.random() - 0.5);
-            state.currentQuiz = { correct: item.a[0], opts };
-            document.getElementById('qText').innerText = item.q;
-            document.getElementById('qFeedback').classList.add('hidden');
-            document.getElementById('qOptions').innerHTML = opts.map((o, i) => `
-                <button onclick="answerQuiz('${o}')" class="w-full text-left bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-slate-200">${i+1}. ${escapeHtml(o)}</button>
-            `).join('');
-        }
-
-        function answerQuiz(chosen) {
-            const correct = chosen === state.currentQuiz.correct;
-            const fb = document.getElementById('qFeedback');
-            fb.classList.remove('hidden');
-            if (correct) {
-                state.balance += 100; updateUI();
-                fb.className = 'p-3 rounded-xl text-xs font-black text-center bg-emerald-600/20 text-emerald-300';
-                fb.innerText = '정답! +100pt';
-            } else {
-                fb.className = 'p-3 rounded-xl text-xs font-black text-center bg-red-600/20 text-red-300';
-                fb.innerText = `오답! 정답은 ${state.currentQuiz.correct}`;
-            }
-            state.quizCooldownUntil = Date.now() + 25000;
-        }
-
-        function spinRoulette() {
-            if (state.balance < 200) return showToast('포인트 부족 (200pt 필요)', true);
-            state.balance -= 200; updateUI();
-            const deltas = [500, 200, -200, -300, 800];
-            const d = deltas[Math.floor(Math.random() * deltas.length)];
-            state.balance += d; updateUI();
-            showToast(`룰렛 결과: ${d > 0 ? '+' + d : d}pt`, d < 0);
-        }
-
-        function playRps(user) {
-            const hands = ['가위', '바위', '보'];
-            const bot = hands[Math.floor(Math.random() * 3)];
-            document.getElementById('rpsMyHand').innerText = user === '가위' ? '✌️' : user === '바위' ? '✊' : '🖐️';
-            document.getElementById('rpsBotHand').innerText = bot === '가위' ? '✌️' : bot === '바위' ? '✊' : '🖐️';
-            if (user === bot) { state.balance += 30; showToast('비김 +30pt'); }
-            else if ((user==='가위'&&bot==='보')||(user==='바위'&&bot==='가위')||(user==='보'&&bot==='바위')) { state.balance += 120; showToast('승리 +120pt'); }
-            else { state.balance -= 200; showToast('패배 -200pt 감점', true); }
-            updateUI();
-        }
-
-        function openTeacherQuizModal() { if (state.isTeacher) document.getElementById('teacherQuizModal').classList.remove('hidden'); }
-        function publishTeacherQuiz() {
-            const q = document.getElementById('customQuizQ').value.trim();
-            const correct = document.getElementById('customQuizCorrect').value.trim();
-            const w1 = document.getElementById('customQuizWrong1').value.trim() || '오답1';
-            const w2 = document.getElementById('customQuizWrong2').value.trim() || '오답2';
-            if (!q || !correct) return showToast('질문과 정답을 입력하세요.', true);
-            state.customTeacherQuiz = { s: '커스텀', q, a: [correct, w1, w2] };
-            document.getElementById('teacherQuizModal').classList.add('hidden');
-            showToast('퀴즈 출제 완료!');
-        }
-
-        function openTeacherNoticeModal() { if (state.isTeacher) document.getElementById('teacherNoticeModal').classList.remove('hidden'); }
-        function publishTeacherNotice() {
-            const txt = document.getElementById('customNoticeText').value.trim();
-            if (!txt) return;
-            document.getElementById('noticeBannerText').innerText = txt;
-            document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
-            document.getElementById('teacherNoticeModal').classList.add('hidden');
-            showToast('공지 등록 완료!');
-        }
-
-        function openPenaltyVoteModal() {
-            document.getElementById('penaltyListContainer').innerHTML = PENALTIES_50.map(p => `
-                <label class="flex items-center gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800 cursor-pointer">
-                    <input type="radio" name="pVote" value="${p}"> <span class="text-xs text-white">${p}</span>
-                </label>
-            `).join('');
-            document.getElementById('penaltyVoteModal').classList.remove('hidden');
-        }
-        function submitPenaltyVote() { document.getElementById('penaltyVoteModal').classList.add('hidden'); showToast('투표 완료!'); }
-
-        function openDonateModal() { document.getElementById('donateModal').classList.remove('hidden'); }
-        function sendDonation() {
-            const amt = parseInt(document.getElementById('dAmount').value);
-            if (state.balance < amt) return showToast('포인트 부족', true);
-            state.balance -= amt; state.totalTeacherDonations += amt;
-            updateUI();
-            document.getElementById('donateModal').classList.add('hidden');
-            showToast(`${amt}pt 후원 성공!`);
-        }
-
-        function escapeHtml(str) { return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
-        updateUI();
-    </script>
-</body>
-</html>
-``````html
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>선생님 실시간 라이브 스튜디오 ULTIMATE PRO</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .chat-scroll::-webkit-scrollbar { width: 5px; }
-        .chat-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        @keyframes popIn {
-            0% { transform: scale(0.7) translateY(20px); opacity: 0; }
-            70% { transform: scale(1.05) translateY(0); opacity: 1; }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-        .donation-pop { animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes gifWiggle {
-            0%, 100% { transform: rotate(-6deg) scale(1); }
-            50% { transform: rotate(6deg) scale(1.12); }
-        }
-        .gif-anim { display: inline-block; animation: gifWiggle 0.8s infinite ease-in-out; }
-    </style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
-
-    <!-- 상단 내비게이션 바 -->
-    <header class="h-16 border-b border-slate-800 bg-slate-900/95 px-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
-        <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
-                <i class="fa-solid fa-tower-broadcast text-white"></i>
-            </div>
-            <div>
-                <h1 class="font-black text-sm text-white flex items-center gap-2">
-                    실시간 라이브 스튜디오
-                    <span id="liveBadge" class="hidden px-2 py-0.5 text-[10px] font-black bg-red-600 text-white rounded-full animate-pulse">LIVE</span>
-                </h1>
-                <p id="headerSubtitle" class="text-[11px] text-slate-400">카메라, 화면공유, 스마트 칠판 완벽 지원</p>
-            </div>
-        </div>
-
-        <div class="flex items-center gap-2.5">
-            <!-- 라이브 나가기 버튼 -->
-            <button id="leaveRoomBtn" onclick="leaveLiveRoom()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-2 rounded-xl transition border border-slate-700 flex items-center gap-1.5">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                <span>라이브 나가기</span>
-            </button>
-
-            <!-- 선생님 화면에 실시간 누적 후원 pt 표시 -->
-            <div id="headerStats" class="hidden items-center gap-2 bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
-                <span class="text-red-400 font-bold"><i class="fa-solid fa-bell mr-1"></i><span id="subCount">124</span></span>
-                <span class="text-slate-600">|</span>
-                <span class="text-pink-400 font-bold"><i class="fa-solid fa-thumbs-up mr-1"></i><span id="likeCount">0</span></span>
-                <span class="text-slate-600">|</span>
-                <span class="text-amber-400 font-black"><i class="fa-solid fa-gift mr-1"></i>선생님 누적후원: <span id="teacherTotalDonationDisplay">0</span>pt</span>
-            </div>
-
-            <!-- 내 포인트 현황 (최대 3000pt 제한) -->
-            <div class="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5">
-                <span class="text-slate-400">내 포인트:</span>
-                <span id="myBalance" class="font-black text-amber-400">300 pt</span>
-            </div>
-        </div>
-    </header>
-
-    <!-- 토스트 알림 메시지 상자 -->
-    <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold bg-emerald-600 text-white">
-        <i class="fa-solid fa-circle-check"></i>
-        <span id="toastText">알림 메시지</span>
-    </div>
-
-    <!-- 1. 초기 역할 선택 로비 화면 -->
-    <main id="lobbyView" class="flex-1 flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
-            <div class="text-center">
-                <h2 class="text-base font-black text-white">📡 라이브 스튜디오 역할 선택</h2>
-                <p class="text-xs text-slate-400 mt-1">선생님은 방 개설, 학생은 6자리 코드로 입장하세요.</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-2xl border border-slate-800">
-                <button type="button" id="tabTeacher" onclick="switchLobbyRole('teacher')" class="py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition">
-                    👨‍🏫 선생님 (방 개설)
-                </button>
-                <button type="button" id="tabStudent" onclick="switchLobbyRole('student')" class="py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition">
-                    🎓 학생 (참여)
-                </button>
-            </div>
-
-            <form id="teacherLobbyForm" onsubmit="handleStartTeacher(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1.5">선생님 성함</label>
-                    <input type="text" id="tNameInput" value="김선생님" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1.5">수업 방송 제목</label>
-                    <input type="text" id="tTitleInput" value="비상 사회 라이브 스튜디오" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-indigo-500">
-                </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg transition">
-                    라이브 방 개설하고 입장하기
-                </button>
-            </form>
-
-            <form id="studentLobbyForm" onsubmit="handleJoinStudent(event)" class="hidden space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1.5">내 닉네임</label>
-                    <input type="text" id="sNicknameInput" placeholder="예: 홍길동" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1.5">참여 코드 (6자리)</label>
-                    <input type="text" id="sRoomCodeInput" placeholder="예: 123456" maxlength="6" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-center font-mono font-black text-emerald-400 tracking-widest text-base focus:outline-none focus:border-emerald-500">
-                </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg transition">
-                    수업 입장하기 (300pt 지급)
-                </button>
-            </form>
-        </div>
-    </main>
-
-    <!-- 2. 메인 라이브 스튜디오 화면 -->
-    <main id="studioView" class="hidden flex-1 max-w-[1550px] w-full mx-auto p-3 md:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <!-- 왼쪽: 영상 송출 및 제어 영역 (8칸) -->
-        <div class="lg:col-span-8 flex flex-col gap-3">
-            <!-- 선생님 공지 (맨 위에 아주 크게 고정) -->
-            <div id="pinnedNoticeBanner" class="hidden bg-gradient-to-r from-amber-600 to-orange-600 border-2 border-amber-300 rounded-3xl p-5 shadow-2xl flex items-center justify-between gap-4">
-                <div class="flex items-center gap-3 text-white">
-                    <div class="w-12 h-12 rounded-2xl bg-black/30 flex items-center justify-center text-2xl flex-shrink-0">
-                        <i class="fa-solid fa-bullhorn text-amber-300"></i>
-                    </div>
-                    <div>
-                        <div class="text-[11px] font-black text-amber-200 tracking-wider">📢 선생님 긴급 중요 공지</div>
-                        <div id="noticeBannerText" class="text-base md:text-xl font-black mt-0.5 leading-snug">공지 내용이 여기에 크게 표시됩니다.</div>
-                    </div>
-                </div>
-                <button onclick="document.getElementById('pinnedNoticeBanner').classList.add('hidden')" class="text-amber-200 hover:text-white p-2 text-sm">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <!-- 영상 송출 및 스마트 칠판 스테이지 -->
-            <div id="stageContainer" class="relative aspect-video bg-slate-900 rounded-3xl border border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl">
-                <!-- 기본 대기 화면 -->
-                <div id="defaultStageContent" class="text-center p-6 z-10">
-                    <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500 text-2xl">
-                        <i class="fa-solid fa-chalkboard-user"></i>
-                    </div>
-                    <p class="text-sm font-bold text-slate-300" id="studioMainTitle">선생님 라이브 방송 송출 화면</p>
-                    <p class="text-xs text-slate-500 mt-1">카메라 켜기, 화면 공유, 스마트 칠판 판서 기능을 이용해보세요!</p>
-                </div>
-
-                <!-- 선생님 카메라 비디오 -->
-                <video id="teacherVideo" autoplay playsinline muted class="hidden absolute inset-0 w-full h-full object-cover z-0"></video>
-
-                <!-- 스마트 판서 칠판 Canvas -->
-                <canvas id="whiteboardCanvas" class="hidden absolute inset-0 w-full h-full z-25 cursor-crosshair"></canvas>
-
-                <!-- 칠판 도구 바 (선생님 전용) -->
-                <div id="whiteboardTools" class="hidden absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-slate-950/90 border border-slate-700 p-1.5 rounded-xl shadow-xl">
-                    <button onclick="setDrawColor('#ffffff')" class="w-6 h-6 rounded-full bg-white border border-slate-600"></button>
-                    <button onclick="setDrawColor('#facc15')" class="w-6 h-6 rounded-full bg-amber-400"></button>
-                    <button onclick="setDrawColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500"></button>
-                    <button onclick="setDrawColor('#38bdf8')" class="w-6 h-6 rounded-full bg-sky-400"></button>
-                    <button onclick="clearWhiteboard()" class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold">지우기</button>
-                </div>
-
-                <!-- 후원 7000pt 벌칙 투표 배너 -->
-                <div id="penaltyVoteContainer" class="hidden absolute top-3 left-3 right-3 bg-slate-950/95 border border-amber-500 rounded-2xl p-3 z-30 shadow-2xl">
-                    <div class="flex items-center justify-between text-xs mb-2">
-                        <span class="font-black text-amber-400"><i class="fa-solid fa-crown mr-1"></i>후원 누적 7,000pt 돌파! 벌칙 투표 오픈!</span>
-                        <span id="penaltyGaugeText" class="text-slate-300 font-bold">현재 7,000 / 7,000pt</span>
-                    </div>
-                    <button onclick="openPenaltyVoteModal()" class="w-full bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 text-white font-black py-2.5 rounded-xl text-xs shadow-md">
-                        🔥 50가지 벌칙 후보 중 1개 골라서 투표하기!
-                    </button>
-                </div>
-            </div>
-
-            <!-- 하단 컨트롤 바 -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5">
-                <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="toggleSubscribe()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-bell"></i>
-                        <span>구독</span>
-                    </button>
-                    <button onclick="addLike()" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-400 text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-thumbs-up"></i>
-                        <span>좋아요</span>
-                    </button>
-
-                    <!-- BGM 플레이어 -->
-                    <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
-                        <i class="fa-solid fa-music text-indigo-400 text-xs"></i>
-                        <select id="bgmSelect" onchange="changeBgm()" class="bg-transparent text-xs text-slate-200 font-bold focus:outline-none">
-                            <option value="none" class="bg-slate-900">노래 끄기</option>
-                            <option value="happy" class="bg-slate-900">🎵 신나는 수업 BGM</option>
-                            <option value="lofi" class="bg-slate-900">☕ 집중 로파이</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                    <!-- 선생님 미디어 & 칠판 버튼 -->
-                    <button id="camBtn" onclick="toggleCamera()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-video"></i><span>카메라 켜기</span>
-                    </button>
-                    <button id="screenBtn" onclick="toggleScreenShare()" class="hidden bg-blue-600 hover:bg-blue-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-desktop"></i><span>화면 공유</span>
-                    </button>
-                    <button id="boardBtn" onclick="toggleWhiteboard()" class="hidden bg-amber-600 hover:bg-amber-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-chalkboard"></i><span>스마트 칠판</span>
-                    </button>
-
-                    <button onclick="openEarnModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-lg">
-                        <i class="fa-solid fa-coins"></i><span>퀴즈 & 룰렛 (+/-)</span>
-                    </button>
-                    <button id="teacherQuizBtn" onclick="openTeacherQuizModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-pen-to-square"></i><span>퀴즈 출제</span>
-                    </button>
-                    <button id="teacherNoticeBtn" onclick="openTeacherNoticeModal()" class="hidden bg-amber-600 hover:bg-amber-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-bullhorn"></i><span>공지</span>
-                    </button>
-                    <button onclick="openDonateModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 text-slate-950 text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-gift"></i><span>후원</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 오른쪽: 실시간 채팅 및 비밀채팅 (4칸) -->
-        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[590px] lg:h-[660px] overflow-hidden shadow-2xl">
-            <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-comments text-indigo-400"></i>
-                    <h2 id="chatTitleLabel" class="font-black text-sm text-white">실시간 라이브 댓글</h2>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="toggleSecretChatMode()" id="secretChatBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-700">
-                        🔒 비밀채팅
-                    </button>
-                    <span id="unlockBadge" class="text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">후원 0pt</span>
-                </div>
-            </div>
-
-            <div id="chatBox" class="flex-1 p-3.5 overflow-y-auto chat-scroll space-y-2.5 text-xs">
-                <div class="text-center text-slate-500 py-2">실시간 채팅방입니다! (도배 방지 9초)</div>
-            </div>
-
-            <!-- 스티커 서랍 -->
-            <div id="stickerDrawer" class="hidden border-t border-slate-800 bg-slate-950 p-3 space-y-2">
-                <div class="flex items-center justify-between text-[11px]">
-                    <span class="font-black text-amber-400"><i class="fa-solid fa-face-smile mr-1"></i>후원 해금 이모지 & GIF</span>
-                </div>
-                <div id="stickerGrid" class="grid grid-cols-4 gap-1.5"></div>
-            </div>
-
-            <div id="spamBar" class="hidden bg-red-600/20 border-t border-red-500/40 px-3 py-1.5 text-[11px] font-bold text-red-300 text-center">
-                🚫 도배 방지! <span id="spamSec">9</span>초 동안 채팅 금지
-            </div>
-
-            <form onsubmit="sendChat(event)" class="p-2.5 border-t border-slate-800 bg-slate-950 flex gap-1.5 items-center">
-                <button type="button" onclick="toggleStickers()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 px-3 py-2.5 rounded-xl text-xs font-bold">
-                    <i class="fa-solid fa-icons"></i>
-                </button>
-                <input type="text" id="chatInput" placeholder="댓글 입력..." autocomplete="off" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold">전송</button>
-            </form>
-        </div>
-    </main>
-
-    <!-- 포인트 얻기 모달 (25초 쿨타임 퀴즈 + 200pt 룰렛 + 가위바위보 -200pt) -->
-    <div id="earnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-coins text-amber-400 mr-2"></i>포인트 얻기 (최대 3000pt)</h3>
-                <button onclick="document.getElementById('earnModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-[11px] font-bold">
-                <button type="button" id="tabQuizBtn" onclick="switchEarn('quiz')" class="py-2 rounded-xl bg-indigo-600 text-white">📚 퀴즈 (25초 쿨타임)</button>
-                <button type="button" id="tabRouletteBtn" onclick="switchEarn('roulette')" class="py-2 rounded-xl text-slate-400">🎰 200pt 룰렛 (+/-)</button>
-                <button type="button" id="tabRpsBtn" onclick="switchEarn('rps')" class="py-2 rounded-xl text-slate-400">✊ 가위바위보 (-200)</button>
-            </div>
-
-            <div id="quizSection" class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <select id="subjectFilter" onchange="nextQuiz()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-indigo-300 focus:outline-none">
-                        <option value="all">전체 과목 랜덤</option>
-                        <option value="사회">🌍 비상 중1 사회</option>
-                        <option value="과학">🔬 중1 과학</option>
-                        <option value="수학">📐 중1 수학</option>
-                    </select>
-                    <span id="quizCooldownText" class="text-xs text-amber-400 font-bold hidden">⏳ 쿨타임 (25초)</span>
-                </div>
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
-                    <span id="quizTag" class="text-[11px] font-black text-indigo-400 bg-indigo-500/15 px-2.5 py-0.5 rounded-full">사회</span>
-                    <p id="qText" class="text-sm font-bold text-white leading-relaxed">문제를 불러오는 중...</p>
-                    <div id="qOptions" class="space-y-2 pt-1"></div>
-                </div>
-                <div id="qFeedback" class="hidden p-3 rounded-xl text-xs font-bold text-center"></div>
-                <button onclick="nextQuiz()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs">다음 문제</button>
-            </div>
-
-            <div id="rouletteSection" class="hidden space-y-4 text-center">
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
-                    <p class="text-xs text-slate-400 font-bold">비용: <span class="text-amber-400">200 pt</span> (+와 - 모두 존재)</p>
-                    <div id="rouletteWheelBox" class="w-36 h-36 mx-auto rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-amber-500 flex items-center justify-center text-3xl text-white shadow-2xl transition-transform duration-700">🎰</div>
-                    <p id="rouletteResultText" class="text-sm font-black text-indigo-300">버튼을 눌러 돌리세요!</p>
-                </div>
-                <button onclick="spinRoulette()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-2xl text-sm shadow-xl">200pt 내고 룰렛 돌리기</button>
-            </div>
-
-            <div id="rpsSection" class="hidden space-y-4 text-center">
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3">
-                    <p class="text-xs text-slate-400 font-bold">패배 시 <span class="text-red-400">-200 pt 감점</span></p>
-                    <div class="flex items-center justify-center gap-6 py-3">
-                        <div><div id="rpsMyHand" class="text-5xl mb-1">❓</div><span class="text-[11px] text-slate-400">나</span></div>
-                        <span class="text-lg font-black text-slate-600">VS</span>
-                        <div><div id="rpsBotHand" class="text-5xl mb-1">🤖</div><span class="text-[11px] text-slate-400">AI</span></div>
-                    </div>
-                    <p id="rpsResultText" class="text-sm font-black text-indigo-300">가위, 바위, 보 선택!</p>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="playRps('가위')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black">✌️ 가위</button>
-                    <button onclick="playRps('바위')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black">✊ 바위</button>
-                    <button onclick="playRps('보')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black">🖐️ 보</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 선생님 퀴즈 만들기 모달 -->
-    <div id="teacherQuizModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-pen-to-square text-purple-400 mr-2"></i>선생님 퀴즈 출제</h3>
-                <button onclick="document.getElementById('teacherQuizModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <input type="text" id="customQuizQ" placeholder="질문 입력" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white">
-            <input type="text" id="customQuizCorrect" placeholder="정답 입력" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white">
-            <div class="grid grid-cols-2 gap-2">
-                <input type="text" id="customQuizWrong1" placeholder="오답 1" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white">
-                <input type="text" id="customQuizWrong2" placeholder="오답 2" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white">
-            </div>
-            <button onclick="publishTeacherQuiz()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-3.5 rounded-xl text-sm">퀴즈 송출하기</button>
-        </div>
-    </div>
-
-    <!-- 선생님 공지 모달 -->
-    <div id="teacherNoticeModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 class="font-black text-base text-white"><i class="fa-solid fa-bullhorn text-amber-400 mr-2"></i>선생님 공지</h3>
-                <button onclick="document.getElementById('teacherNoticeModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <textarea id="customNoticeText" rows="3" placeholder="공지 내용" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white"></textarea>
-            <button onclick="publishTeacherNotice()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3.5 rounded-xl text-sm">공지 띄우기</button>
-        </div>
-    </div>
-
-    <!-- 50가지 벌칙 투표 모달 -->
-    <div id="penaltyVoteModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
-            <h3 class="font-black text-base text-white"><i class="fa-solid fa-gavel text-red-500 mr-2"></i>50가지 벌칙 투표</h3>
-            <div id="penaltyListContainer" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
-            <button onclick="submitPenaltyVote()" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl text-sm">최종 투표하기</button>
-        </div>
-    </div>
-
-    <!-- 후원 모달 -->
-    <div id="donateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
-            <h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>후원하기</h3>
-            <select id="dAmount" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
-                <option value="100">100 pt</option>
-                <option value="500">500 pt</option>
-                <option value="1000" selected>1000 pt</option>
-                <option value="3000">3000 pt (후원 게이지 폭발!)</option>
-            </select>
-            <input type="text" id="dMsg" placeholder="응원 메시지" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
-            <button onclick="sendDonation()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-xl text-sm">후원 보내기</button>
-        </div>
-    </div>
-
-    <script>
-        const STICKERS = [
-            { id: 's1', req: 0, type: 'emoji', icon: '👍', label: '엄지척' },
-            { id: 's3', req: 100, type: 'emoji', icon: '🔥', label: '100pt 열정' },
-            { id: 's5', req: 300, type: 'emoji', icon: '💖', label: '300pt 하트' },
-            { id: 's8', req: 1000, type: 'gif', icon: '👑', label: '1000pt 왕관' }
-        ];
-
-        const PENALTIES_50 = Array.from({length: 50}, (_, i) => `${i+1}. 벌칙 미션 수행하기 (${i+1}번)`);
-        const QUIZ_BANK = [
-            { s: '사회', q: '한 사회의 구성원들이 공유하는 생활 양식의 총체를 무엇이라고 하는가?', a: ['문화', '자연환경', '유전', '본능'] },
-            { s: '과학', q: '지구 내부 구조 중 부피가 가장 큰 층은?', a: ['맨틀', '지각', '외핵', '내핵'] },
-            { s: '수학', q: '1보다 큰 자연수 중 1과 자기 자신만을 약수로 가지는 수는?', a: ['소수', '합성수', '음수', '무리수'] }
-        ];
-
-        let state = {
-            role: 'student',
-            isTeacher: false,
-            roomCode: null,
-            balance: 300,
-            totalTeacherDonations: 0,
-            chatCount: 0,
-            lockUntil: 0,
-            currentQuiz: null,
-            answered: false,
-            quizCooldownUntil: 0,
-            isSecretChat: false,
-            customTeacherQuiz: null,
-            localStream: null,
-            isBoardActive: false
-        };
-
-        function showToast(msg, isErr = false) {
-            const t = document.getElementById('toast');
-            document.getElementById('toastText').innerText = msg;
-            t.className = `fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold ${isErr ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3000);
-        }
-
-        function switchLobbyRole(role) {
-            const isTeacher = role === 'teacher';
-            state.role = role;
-            state.isTeacher = isTeacher;
-            document.getElementById('tabTeacher').className = isTeacher ? 'py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition' : 'py-2.5 rounded-xl text-xs font-bold text-slate-400';
-            document.getElementById('tabStudent').className = !isTeacher ? 'py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white transition' : 'py-2.5 rounded-xl text-xs font-bold text-slate-400';
-            document.getElementById('teacherLobbyForm').classList.toggle('hidden', !isTeacher);
-            document.getElementById('studentLobbyForm').classList.toggle('hidden', isTeacher);
-        }
-
-        function handleStartTeacher(e) {
-            e.preventDefault();
-            const name = document.getElementById('tNameInput').value.trim() || '김선생님';
-            const title = document.getElementById('tTitleInput').value.trim() || '라이브 수업';
-            const roomCode = String(Math.floor(100000 + Math.random() * 900000));
-            state.roomCode = roomCode;
-            state.isTeacher = true;
-
-            enterStudioMode(name, title, roomCode);
-            showToast(`👨‍🏫 방 개설 완료! 참여 코드: ${roomCode}`);
-        }
-
-        function handleJoinStudent(e) {
-            e.preventDefault();
-            const nickname = document.getElementById('sNicknameInput').value.trim();
-            const roomCode = document.getElementById('sRoomCodeInput').value.trim();
-            if (!nickname || roomCode.length !== 6) return showToast('코드 6자리를 확인하세요.', true);
-            state.roomCode = roomCode;
-            state.isTeacher = false;
-
-            enterStudioMode(nickname, '라이브 수업', roomCode);
-            showToast('🎓 수업에 입장했습니다! (300pt)');
-        }
-
-        function enterStudioMode(name, title, roomCode) {
-            document.getElementById('lobbyView').classList.add('hidden');
-            document.getElementById('studioView').classList.remove('hidden');
-            document.getElementById('headerStats').classList.remove('hidden');
-            document.getElementById('liveBadge').classList.remove('hidden');
-            document.getElementById('leaveRoomBtn').classList.remove('hidden');
-            document.getElementById('headerSubtitle').innerText = `코드: ${roomCode}`;
-            document.getElementById('studioMainTitle').innerText = title;
-
-            if (state.isTeacher) {
-                document.getElementById('teacherQuizBtn').classList.remove('hidden');
-                document.getElementById('teacherNoticeBtn').classList.remove('hidden');
-                document.getElementById('camBtn').classList.remove('hidden');
-                document.getElementById('screenBtn').classList.remove('hidden');
-                document.getElementById('boardBtn').classList.remove('hidden');
-            }
-        }
-
-        function leaveLiveRoom() {
-            if (state.localStream) state.localStream.getTracks().forEach(t => t.stop());
-            location.reload();
-        }
-
-        // 카메라 켜기
-        async function toggleCamera() {
-            const video = document.getElementById('teacherVideo');
-            const defaultContent = document.getElementById('defaultStageContent');
-            try {
-                if (!state.localStream) {
-                    state.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                    video.srcObject = state.localStream;
-                    video.classList.remove('hidden');
-                    defaultContent.classList.add('hidden');
-                    document.getElementById('camBtn').className = 'bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
-                    document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video-slash"></i><span>카메라 끄기</span>';
-                    showToast('📷 카메라가 켜졌습니다!');
-                } else {
-                    state.localStream.getTracks().forEach(t => t.stop());
-                    state.localStream = null;
-                    video.srcObject = null;
-                    video.classList.add('hidden');
-                    defaultContent.classList.remove('hidden');
-                    document.getElementById('camBtn').className = 'bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
-                    document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video"></i><span>카메라 켜기</span>';
-                    showToast('카메라가 꺼졌습니다.');
-                }
-            } catch {
-                showToast('카메라 권한을 허용해주세요.', true);
-            }
-        }
-
-        // 화면 공유
-        async function toggleScreenShare() {
-            const video = document.getElementById('teacherVideo');
-            const defaultContent = document.getElementById('defaultStageContent');
-            try {
-                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                video.srcObject = stream;
-                video.classList.remove('hidden');
-                defaultContent.classList.add('hidden');
-                showToast('🖥️ 화면 공유가 시작되었습니다!');
-                stream.getVideoTracks()[0].onended = () => {
-                    video.srcObject = null;
-                    video.classList.add('hidden');
-                    defaultContent.classList.remove('hidden');
-                };
-            } catch {
-                showToast('화면 공유 취소', true);
-            }
-        }
-
-        // 스마트 칠판
-        function toggleWhiteboard() {
-            state.isBoardActive = !state.isBoardActive;
-            const canvas = document.getElementById('whiteboardCanvas');
-            const tools = document.getElementById('whiteboardTools');
-            canvas.classList.toggle('hidden', !state.isBoardActive);
-            tools.classList.toggle('hidden', !state.isBoardActive);
-
-            if (state.isBoardActive) {
-                initWhiteboard();
-                showToast('🖍️ 스마트 칠판이 열렸습니다!');
-            } else {
-                showToast('칠판이 닫혔습니다.');
-            }
-        }
-
-        let ctx, isDrawing = false, drawColor = '#ffffff';
-        function initWhiteboard() {
-            const canvas = document.getElementById('whiteboardCanvas');
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-            ctx = canvas.getContext('2d');
-            ctx.strokeStyle = drawColor;
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round';
-
-            canvas.onmousedown = (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); };
-            canvas.onmousemove = (e) => { if (!isDrawing) return; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); };
-            canvas.onmouseup = () => { isDrawing = false; };
-        }
-
-        function setDrawColor(col) { drawColor = col; if (ctx) ctx.strokeStyle = col; }
-        function clearWhiteboard() { if (ctx) ctx.clearRect(0, 0, 10000, 10000); }
-
-        function updateUI() {
-            if (state.balance > 3000) state.balance = 3000;
-            document.getElementById('myBalance').innerText = `${state.balance} pt`;
-            document.getElementById('unlockBadge').innerText = `후원 ${state.totalTeacherDonations}pt`;
-            document.getElementById('teacherTotalDonationDisplay').innerText = state.totalTeacherDonations;
-            if (state.totalTeacherDonations >= 7000) document.getElementById('penaltyVoteContainer').classList.remove('hidden');
-            renderStickers();
-        }
-
-        function toggleSubscribe() {
-            updateUI();
-            showToast('구독 완료! 🔔');
-            document.getElementById('subCount').innerText = parseInt(document.getElementById('subCount').innerText) + 1;
-        }
-
-        function addLike() {
-            document.getElementById('likeCount').innerText = parseInt(document.getElementById('likeCount').innerText) + 1;
-            showToast('좋아요! ❤️');
-        }
-
-        let audioCtx, bgmTimer;
-        function changeBgm() {
-            const mode = document.getElementById('bgmSelect').value;
-            if (bgmTimer) { clearInterval(bgmTimer); bgmTimer = null; }
-            if (mode === 'none') return showToast('BGM 종료');
-            showToast('🎵 BGM 재생!');
-            const notes = [261.63, 329.63, 392.00, 523.25];
-            let step = 0;
-            bgmTimer = setInterval(() => {
-                try {
-                    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.frequency.setValueAtTime(notes[step % notes.length], audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
-                    osc.connect(gain); gain.connect(audioCtx.destination);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-                    step++;
-                } catch {}
-            }, 300);
-        }
-
-        function toggleStickers() { document.getElementById('stickerDrawer').classList.toggle('hidden'); }
-        function renderStickers() {
-            document.getElementById('stickerGrid').innerHTML = STICKERS.map(st => `
-                <button onclick="sendSticker('${st.icon}')" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-center">
-                    <span class="text-xl">${st.icon}</span>
-                    <span class="block text-[9px] text-amber-300">${st.label}</span>
-                </button>
-            `).join('');
-        }
-        function sendSticker(icon) { appendChat('나', `[스티커]`, icon, 'emoji'); document.getElementById('stickerDrawer').classList.add('hidden'); }
-
-        function toggleSecretChatMode() {
-            state.isSecretChat = !state.isSecretChat;
-            showToast(state.isSecretChat ? '비밀채팅 모드 ON' : '일반채팅 모드 ON');
-        }
-
-        function sendChat(e) {
-            e.preventDefault();
-            const input = document.getElementById('chatInput');
-            const txt = input.value.trim();
-            if (!txt) return;
-            input.value = '';
-            appendChat('나', txt);
-        }
-
-        function appendChat(sender, msg, icon = null) {
-            const box = document.getElementById('chatBox');
-            const div = document.createElement('div');
-            div.className = 'p-2.5 rounded-2xl bg-slate-800/80 text-xs';
-            div.innerHTML = `<span class="font-bold text-emerald-400">${escapeHtml(sender)}</span>: <span class="text-slate-100">${escapeHtml(msg)} ${icon || ''}</span>`;
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
-        }
-
-        function openEarnModal() { document.getElementById('earnModal').classList.remove('hidden'); switchEarn('quiz'); }
-        function switchEarn(tab) {
-            document.getElementById('quizSection').classList.toggle('hidden', tab !== 'quiz');
-            document.getElementById('rouletteSection').classList.toggle('hidden', tab !== 'roulette');
-            document.getElementById('rpsSection').classList.toggle('hidden', tab !== 'rps');
-            if (tab === 'quiz' && !state.currentQuiz) nextQuiz();
-        }
-
-        function nextQuiz() {
-            const now = Date.now();
-            if (now < state.quizCooldownUntil) {
-                const remain = Math.ceil((state.quizCooldownUntil - now) / 1000);
-                return showToast(`⏳ 쿨타임 중 (${remain}초)`, true);
-            }
-
-            let item = state.customTeacherQuiz || QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)];
-            state.customTeacherQuiz = null;
-            const opts = [...item.a].sort(() => Math.random() - 0.5);
-            state.currentQuiz = { correct: item.a[0], opts };
-            document.getElementById('qText').innerText = item.q;
-            document.getElementById('qFeedback').classList.add('hidden');
-            document.getElementById('qOptions').innerHTML = opts.map((o, i) => `
-                <button onclick="answerQuiz('${o}')" class="w-full text-left bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-slate-200">${i+1}. ${escapeHtml(o)}</button>
-            `).join('');
-        }
-
-        function answerQuiz(chosen) {
-            const correct = chosen === state.currentQuiz.correct;
-            const fb = document.getElementById('qFeedback');
-            fb.classList.remove('hidden');
-            if (correct) {
-                state.balance += 100; updateUI();
-                fb.className = 'p-3 rounded-xl text-xs font-black text-center bg-emerald-600/20 text-emerald-300';
-                fb.innerText = '정답! +100pt';
-            } else {
-                fb.className = 'p-3 rounded-xl text-xs font-black text-center bg-red-600/20 text-red-300';
-                fb.innerText = `오답! 정답은 ${state.currentQuiz.correct}`;
-            }
-            state.quizCooldownUntil = Date.now() + 25000;
-        }
-
-        function spinRoulette() {
-            if (state.balance < 200) return showToast('포인트 부족 (200pt 필요)', true);
-            state.balance -= 200; updateUI();
-            const deltas = [500, 200, -200, -300, 800];
-            const d = deltas[Math.floor(Math.random() * deltas.length)];
-            state.balance += d; updateUI();
-            showToast(`룰렛 결과: ${d > 0 ? '+' + d : d}pt`, d < 0);
-        }
-
-        function playRps(user) {
-            const hands = ['가위', '바위', '보'];
-            const bot = hands[Math.floor(Math.random() * 3)];
-            document.getElementById('rpsMyHand').innerText = user === '가위' ? '✌️' : user === '바위' ? '✊' : '🖐️';
-            document.getElementById('rpsBotHand').innerText = bot === '가위' ? '✌️' : bot === '바위' ? '✊' : '🖐️';
-            if (user === bot) { state.balance += 30; showToast('비김 +30pt'); }
-            else if ((user==='가위'&&bot==='보')||(user==='바위'&&bot==='가위')||(user==='보'&&bot==='바위')) { state.balance += 120; showToast('승리 +120pt'); }
-            else { state.balance -= 200; showToast('패배 -200pt 감점', true); }
-            updateUI();
-        }
-
-        function openTeacherQuizModal() { if (state.isTeacher) document.getElementById('teacherQuizModal').classList.remove('hidden'); }
-        function publishTeacherQuiz() {
-            const q = document.getElementById('customQuizQ').value.trim();
-            const correct = document.getElementById('customQuizCorrect').value.trim();
-            const w1 = document.getElementById('customQuizWrong1').value.trim() || '오답1';
-            const w2 = document.getElementById('customQuizWrong2').value.trim() || '오답2';
-            if (!q || !correct) return showToast('질문과 정답을 입력하세요.', true);
-            state.customTeacherQuiz = { s: '커스텀', q, a: [correct, w1, w2] };
-            document.getElementById('teacherQuizModal').classList.add('hidden');
-            showToast('퀴즈 출제 완료!');
-        }
-
-        function openTeacherNoticeModal() { if (state.isTeacher) document.getElementById('teacherNoticeModal').classList.remove('hidden'); }
-        function publishTeacherNotice() {
-            const txt = document.getElementById('customNoticeText').value.trim();
-            if (!txt) return;
-            document.getElementById('noticeBannerText').innerText = txt;
-            document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
-            document.getElementById('teacherNoticeModal').classList.add('hidden');
-            showToast('공지 등록 완료!');
-        }
-
-        function openPenaltyVoteModal() {
-            document.getElementById('penaltyListContainer').innerHTML = PENALTIES_50.map(p => `
-                <label class="flex items-center gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800 cursor-pointer">
-                    <input type="radio" name="pVote" value="${p}"> <span class="text-xs text-white">${p}</span>
-                </label>
-            `).join('');
-            document.getElementById('penaltyVoteModal').classList.remove('hidden');
-        }
-        function submitPenaltyVote() { document.getElementById('penaltyVoteModal').classList.add('hidden'); showToast('투표 완료!'); }
-
-        function openDonateModal() { document.getElementById('donateModal').classList.remove('hidden'); }
-        function sendDonation() {
-            const amt = parseInt(document.getElementById('dAmount').value);
-            if (state.balance < amt) return showToast('포인트 부족', true);
-            state.balance -= amt; state.totalTeacherDonations += amt;
-            updateUI();
-            document.getElementById('donateModal').classList.add('hidden');
-            showToast(`${amt}pt 후원 성공!`);
-        }
-
-        function escapeHtml(str) { return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
-        updateUI();
-    </script>
+​<!-- 상단 바 -->
+<header class="h-16 border-b border-slate-800 bg-slate-900/95 px-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
+<i class="fa-solid fa-tower-broadcast text-white"></i>
+</div>
+<div>
+<h1 class="font-black text-sm text-white flex items-center gap-2">
+실시간 라이브 스튜디오
+<span id="liveBadge" class="hidden px-2 py-0.5 text-[10px] font-black bg-red-600 text-white rounded-full animate-pulse">LIVE</span>
+</h1>
+<p id="headerSubtitle" class="text-[11px] text-slate-400">카메라, 화면공유, 스마트 칠판 완벽 지원</p>
+</div>
+</div>
+​<div class="flex items-center gap-2.5">
+<!-- 라이브 나가기 / 방송 종료 버튼 -->
+<button id="leaveRoomBtn" onclick="leaveLiveRoom()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-2 rounded-xl transition border border-slate-700 flex items-center gap-1.5">
+<i class="fa-solid fa-arrow-right-from-bracket"></i>
+<span id="leaveBtnText">라이브 나가기</span>
+</button>
+​<!-- 선생님 화면 누적 후원 -->
+<div id="headerStats" class="hidden items-center gap-2 bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
+<span class="text-red-400 font-bold"><i class="fa-solid fa-bell mr-1"></i><span id="subCount">124</span></span>
+<span class="text-slate-600">|</span>
+<span class="text-pink-400 font-bold"><i class="fa-solid fa-thumbs-up mr-1"></i><span id="likeCount">0</span></span>
+<span class="text-slate-600">|</span>
+<span class="text-amber-400 font-black"><i class="fa-solid fa-gift mr-1"></i>누적후원: <span id="teacherTotalDonationDisplay">0</span>pt</span>
+</div>
+​<div class="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5">
+<span class="text-slate-400">내 포인트:</span>
+<span id="myBalance" class="font-black text-amber-400">300 pt</span>
+</div>
+</div>
+</header>
+​<!-- 토스트 알림 -->
+<div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold bg-emerald-600 text-white">
+<i class="fa-solid fa-circle-check"></i>
+<span id="toastText">알림</span>
+</div>
+​<!-- 1. 초기 역할 선택 로비 -->
+<main id="lobbyView" class="flex-1 flex items-center justify-center p-4">
+<div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
+<div class="text-center">
+<h2 class="text-base font-black text-white">📡 라이브 스튜디오 접속 로비</h2>
+<p class="text-xs text-slate-400 mt-1">선생님은 방 개설, 학생은 6자리 코드로 입장하세요.</p>
+</div>
+​<div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+<button type="button" id="tabTeacher" onclick="switchLobbyRole('teacher')" class="py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition">
+👨‍🏫 선생님 (방 개설)
+</button>
+<button type="button" id="tabStudent" onclick="switchLobbyRole('student')" class="py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition">
+🎓 학생 (참여)
+</button>
+</div>
+​<form id="teacherLobbyForm" onsubmit="handleStartTeacher(event)" class="space-y-4">
+<div>
+<label class="block text-xs font-bold text-slate-400 mb-1.5">선생님 성함</label>
+<input type="text" id="tNameInput" value="김선생님" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-indigo-500">
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-400 mb-1.5">수업 방송 제목</label>
+<input type="text" id="tTitleInput" value="비상 사회 라이브 스튜디오" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-indigo-500">
+</div>
+<button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg transition">
+라이브 방 개설하고 입장하기
+</button>
+</form>
+​<form id="studentLobbyForm" onsubmit="handleJoinStudent(event)" class="hidden space-y-4">
+<div>
+<label class="block text-xs font-bold text-slate-400 mb-1.5">내 닉네임</label>
+<input type="text" id="sNicknameInput" placeholder="예: 홍길동" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-emerald-500">
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-400 mb-1.5">참여 코드 (6자리)</label>
+<input type="text" id="sRoomCodeInput" placeholder="예: 123456" maxlength="6" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-center font-mono font-black text-emerald-400 tracking-widest text-base focus:outline-none focus:border-emerald-500">
+</div>
+<button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-xl text-sm shadow-lg transition">
+수업 입장하기 (300pt 지급)
+</button>
+</form>
+</div>
+</main>
+​<!-- 2. 메인 라이브 스튜디오 화면 -->
+<main id="studioView" class="hidden flex-1 max-w-[1550px] w-full mx-auto p-3 md:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
+<div class="lg:col-span-8 flex flex-col gap-3">
+<!-- 선생님 공지 (맨 위에 아주 크게 고정) -->
+<div id="pinnedNoticeBanner" class="hidden bg-gradient-to-r from-amber-600 to-orange-600 border-2 border-amber-300 rounded-3xl p-5 shadow-2xl flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 text-white">
+<div class="w-12 h-12 rounded-2xl bg-black/30 flex items-center justify-center text-2xl flex-shrink-0">
+<i class="fa-solid fa-bullhorn text-amber-300"></i>
+</div>
+<div>
+<div class="text-[11px] font-black text-amber-200 tracking-wider">📢 선생님 긴급 중요 공지</div>
+<div id="noticeBannerText" class="text-base md:text-xl font-black mt-0.5 leading-snug">공지 내용</div>
+</div>
+</div>
+<button onclick="document.getElementById('pinnedNoticeBanner').classList.add('hidden')" class="text-amber-200 hover:text-white p-2">
+<i class="fa-solid fa-xmark text-lg"></i>
+</button>
+</div>
+​<!-- 영상 송출 및 스마트 칠판 스테이지 -->
+<div id="stageContainer" class="relative aspect-video bg-slate-900 rounded-3xl border border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl">
+<div id="defaultStageContent" class="text-center p-6 z-10">
+<div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500 text-2xl">
+<i class="fa-solid fa-chalkboard-user"></i>
+</div>
+<p class="text-sm font-bold text-slate-300" id="studioMainTitle">선생님 라이브 방송</p>
+<p class="text-xs text-slate-500 mt-1">카메라 켜기, 화면 공유, 스마트 칠판 기능을 이용해보세요!</p>
+</div>
+​<video id="teacherVideo" autoplay playsinline muted class="hidden absolute inset-0 w-full h-full object-cover z-0"></video>
+<canvas id="whiteboardCanvas" class="hidden absolute inset-0 w-full h-full z-25 cursor-crosshair"></canvas>
+​<div id="whiteboardTools" class="hidden absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-slate-950/90 border border-slate-700 p-1.5 rounded-xl shadow-xl">
+<button onclick="setDrawColor('#ffffff')" class="w-6 h-6 rounded-full bg-white border border-slate-600"></button>
+<button onclick="setDrawColor('#facc15')" class="w-6 h-6 rounded-full bg-amber-400"></button>
+<button onclick="setDrawColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500"></button>
+<button onclick="setDrawColor('#38bdf8')" class="w-6 h-6 rounded-full bg-sky-400"></button>
+<button onclick="clearWhiteboard()" class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold">지우기</button>
+</div>
+​<div id="penaltyVoteContainer" class="hidden absolute top-3 left-3 right-3 bg-slate-950/95 border border-amber-500 rounded-2xl p-3 z-30 shadow-2xl">
+<div class="flex items-center justify-between text-xs mb-2">
+<span class="font-black text-amber-400"><i class="fa-solid fa-crown mr-1"></i>후원 7,000pt 돌파! 벌칙 투표 오픈!</span>
+<span id="penaltyGaugeText" class="text-slate-300 font-bold">현재 7,000 / 7,000pt</span>
+</div>
+<button onclick="openPenaltyVoteModal()" class="w-full bg-gradient-to-r from-red-600 to-amber-600 text-white font-black py-2.5 rounded-xl text-xs">
+🔥 50가지 벌칙 후보 중 1개 골라서 투표하기!
+</button>
+</div>
+</div>
+​<!-- 하단 컨트롤 바 -->
+<div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5">
+<div class="flex flex-wrap items-center gap-2">
+<button onclick="toggleSubscribe()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
+<i class="fa-solid fa-bell"></i><span>구독</span>
+</button>
+<button onclick="addLike()" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-400 text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
+<i class="fa-solid fa-thumbs-up"></i><span>좋아요</span>
+</button>
+<div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
+<i class="fa-solid fa-music text-indigo-400 text-xs"></i>
+<select id="bgmSelect" onchange="changeBgm()" class="bg-transparent text-xs text-slate-200 font-bold focus:outline-none">
+<option value="none" class="bg-slate-900">노래 끄기</option>
+<option value="happy" class="bg-slate-900">🎵 신나는 수업 BGM</option>
+<option value="lofi" class="bg-slate-900">☕ 집중 로파이</option>
+</select>
+</div>
+</div>
+​<div class="flex flex-wrap items-center gap-2">
+<button id="camBtn" onclick="toggleCamera()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
+<i class="fa-solid fa-video"></i><span>카메라 켜기</span>
+</button>
+<button id="screenBtn" onclick="toggleScreenShare()" class="hidden bg-blue-600 hover:bg-blue-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
+<i class="fa-solid fa-desktop"></i><span>화면 공유</span>
+</button>
+<button id="boardBtn" onclick="toggleWhiteboard()" class="hidden bg-amber-600 hover:bg-amber-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
+<i class="fa-solid fa-chalkboard"></i><span>스마트 칠판</span>
+</button>
+​<button onclick="openEarnModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
+<i class="fa-solid fa-coins"></i><span>퀴즈 & 룰렛 (+/-)</span>
+</button>
+<button id="teacherQuizBtn" onclick="openTeacherQuizModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
+<i class="fa-solid fa-pen-to-square"></i><span>퀴즈 출제</span>
+</button>
+<button id="teacherNoticeBtn" onclick="openTeacherNoticeModal()" class="hidden bg-amber-600 hover:bg-amber-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
+<i class="fa-solid fa-bullhorn"></i><span>공지</span>
+</button>
+<button onclick="openDonateModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 text-slate-950 text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5">
+<i class="fa-solid fa-gift"></i><span>후원</span>
+</button>
+</div>
+</div>
+</div>
+​<!-- 오른쪽: 실시간 채팅 및 비밀채팅 -->
+<div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[590px] lg:h-[660px] overflow-hidden shadow-2xl">
+<div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+<div class="flex items-center gap-2">
+<i class="fa-solid fa-comments text-indigo-400"></i>
+<h2 class="font-black text-sm text-white">실시간 라이브 댓글</h2>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="toggleSecretChatMode()" id="secretChatBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-700">
+🔒 비밀채팅
+</button>
+<span id="unlockBadge" class="text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">후원 0pt</span>
+</div>
+</div>
+​<div id="chatBox" class="flex-1 p-3.5 overflow-y-auto chat-scroll space-y-2.5 text-xs">
+<div class="text-center text-slate-500 py-2">실시간 채팅방입니다! (도배 방지 9초)</div>
+</div>
+​<div id="stickerDrawer" class="hidden border-t border-slate-800 bg-slate-950 p-3 space-y-2">
+<div class="flex items-center justify-between text-[11px]">
+<span class="font-black text-amber-400"><i class="fa-solid fa-face-smile mr-1"></i>후원 해금 이모지 & GIF</span>
+</div>
+<div id="stickerGrid" class="grid grid-cols-4 gap-1.5"></div>
+</div>
+​<form onsubmit="sendChat(event)" class="p-2.5 border-t border-slate-800 bg-slate-950 flex gap-1.5 items-center">
+<button type="button" onclick="toggleStickers()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 px-3 py-2.5 rounded-xl text-xs font-bold">
+<i class="fa-solid fa-icons"></i>
+</button>
+<input type="text" id="chatInput" placeholder="댓글 입력..." autocomplete="off" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+<button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold">전송</button>
+</form>
+</div>
+</main>
+​<!-- 포인트 얻기 모달 -->
+<div id="earnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+<div class="flex items-center justify-between">
+<h3 class="font-black text-base text-white"><i class="fa-solid fa-coins text-amber-400 mr-2"></i>포인트 얻기 (최대 3000pt)</h3>
+<button onclick="document.getElementById('earnModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+</div>
+​<div class="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-[11px] font-bold">
+<button type="button" id="tabQuizBtn" onclick="switchEarn('quiz')" class="py-2 rounded-xl bg-indigo-600 text-white">📚 퀴즈 (25초 쿨타임)</button>
+<button type="button" id="tabRouletteBtn" onclick="switchEarn('roulette')" class="py-2 rounded-xl text-slate-400">🎰 200pt 룰렛 (+/-)</button>
+<button type="button" id="tabRpsBtn" onclick="switchEarn('rps')" class="py-2 rounded-xl text-slate-400">✊ 가위바위보 (-200)</button>
+</div>
+​<div id="quizSection" class="space-y-4">
+<div class="flex items-center justify-between">
+<select id="subjectFilter" onchange="nextQuiz()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-indigo-300 focus:outline-none">
+<option value="all">전체 과목 랜덤</option>
+<option value="사회">🌍 비상 중1 사회</option>
+<option value="과학">🔬 중1 과학</option>
+<option value="수학">📐 중1 수학</option>
+</select>
+</div>
+<div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+<span id="quizTag" class="text-[11px] font-black text-indigo-400 bg-indigo-500/15 px-2.5 py-0.5 rounded-full">사회</span>
+<p id="qText" class="text-sm font-bold text-white leading-relaxed">문제를 불러오는 중...</p>
+<div id="qOptions" class="space-y-2 pt-1"></div>
+</div>
+<div id="qFeedback" class="hidden p-3 rounded-xl text-xs font-bold text-center"></div>
+<button onclick="nextQuiz()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs">다음 문제</button>
+</div>
+​<div id="rouletteSection" class="hidden space-y-4 text-center">
+<div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
+<p class="text-xs text-slate-400 font-bold">비용: <span class="text-amber-400">200 pt</span> (+와 - 모두 존재)</p>
+<div id="rouletteWheelBox" class="w-36 h-36 mx-auto rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-amber-500 flex items-center justify-center text-3xl text-white shadow-2xl">🎰</div>
+<p id="rouletteResultText" class="text-sm font-black text-indigo-300">버튼을 눌러 돌리세요!</p>
+</div>
+<button onclick="spinRoulette()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-2xl text-sm shadow-xl">200pt 내고 룰렛 돌리기</button>
+</div>
+​<div id="rpsSection" class="hidden space-y-4 text-center">
+<div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3">
+<p class="text-xs text-slate-400 font-bold">패배 시 <span class="text-red-400">-200 pt 감점</span></p>
+<div class="flex items-center justify-center gap-6 py-3">
+<div><div id="rpsMyHand" class="text-5xl mb-1">❓</div><span class="text-[11px] text-slate-400">나</span></div>
+<span class="text-lg font-black text-slate-600">VS</span>
+<div><div id="rpsBotHand" class="text-5xl mb-1">🤖</div><span class="text-[11px] text-slate-400">AI</span></div>
+</div>
+<p id="rpsResultText" class="text-sm font-black text-indigo-300">가위, 바위, 보 선택!</p>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<button onclick="playRps('가위')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black">✌️ 가위</button>
+<button onclick="playRps('바위')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black">✊ 바위</button>
+<button onclick="playRps('보')" class="bg-slate-800 hover:bg-indigo-600 py-3.5 rounded-2xl text-xl font-black">🖐️ 보</button>
+</div>
+</div>
+</div>
+</div>
+​<!-- 선생님 퀴즈 만들기 모달 -->
+<div id="teacherQuizModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="font-black text-base text-white"><i class="fa-solid fa-pen-to-square text-purple-400 mr-2"></i>선생님 퀴즈 출제</h3>
+<button onclick="document.getElementById('teacherQuizModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+</div>
+<input type="text" id="customQuizQ" placeholder="질문 입력" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white">
+<input type="text" id="customQuizCorrect" placeholder="정답 입력" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white">
+<div class="grid grid-cols-2 gap-2">
+<input type="text" id="customQuizWrong1" placeholder="오답 1" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white">
+<input type="text" id="customQuizWrong2" placeholder="오답 2" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white">
+</div>
+<button onclick="publishTeacherQuiz()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-3.5 rounded-xl text-sm">퀴즈 송출하기</button>
+</div>
+</div>
+​<!-- 선생님 공지 모달 -->
+<div id="teacherNoticeModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="font-black text-base text-white"><i class="fa-solid fa-bullhorn text-amber-400 mr-2"></i>선생님 공지</h3>
+<button onclick="document.getElementById('teacherNoticeModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+</div>
+<textarea id="customNoticeText" rows="3" placeholder="공지 내용" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white"></textarea>
+<button onclick="publishTeacherNotice()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3.5 rounded-xl text-sm">공지 띄우기</button>
+</div>
+</div>
+​<!-- 50가지 벌칙 투표 모달 -->
+<div id="penaltyVoteModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+<h3 class="font-black text-base text-white"><i class="fa-solid fa-gavel text-red-500 mr-2"></i>50가지 벌칙 투표</h3>
+<div id="penaltyListContainer" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+<button onclick="submitPenaltyVote()" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl text-sm">최종 투표하기</button>
+</div>
+</div>
+​<!-- 후원 모달 -->
+<div id="donateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+<div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
+<h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>후원하기</h3>
+<select id="dAmount" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
+<option value="100">100 pt</option>
+<option value="500">500 pt</option>
+<option value="1000" selected>1000 pt</option>
+<option value="3000">3000 pt (후원 게이지 폭발!)</option>
+</select>
+<input type="text" id="dMsg" placeholder="응원 메시지" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
+<button onclick="sendDonation()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-xl text-sm">후원 보내기</button>
+</div>
+</div>
+​<script>
+const STICKERS = [
+{ id: 's1', req: 0, type: 'emoji', icon: '👍', label: '엄지척' },
+{ id: 's3', req: 100, type: 'emoji', icon: '🔥', label: '100pt 열정' },
+{ id: 's5', req: 300, type: 'emoji', icon: '💖', label: '300pt 하트' },
+{ id: 's8', req: 1000, type: 'gif', icon: '👑', label: '1000pt 왕관' }
+];
+​const PENALTIES_50 = Array.from({length: 50}, (_, i) => ${i+1}. 벌칙 미션 수행하기 (${i+1}번));
+const QUIZ_BANK = [
+{ s: '사회', q: '한 사회의 구성원들이 공유하는 생활 양식의 총체를 무엇이라고 하는가?', a: ['문화', '자연환경', '유전', '본능'] },
+{ s: '과학', q: '지구 내부 구조 중 부피가 가장 큰 층은?', a: ['맨틀', '지각', '외핵', '내핵'] },
+{ s: '수학', q: '1보다 큰 자연수 중 1과 자기 자신만을 약수로 가지는 수는?', a: ['소수', '합성수', '음수', '무리수'] }
+];
+​let state = {
+role: 'student',
+isTeacher: false,
+roomCode: null,
+balance: 300,
+totalTeacherDonations: 0,
+currentQuiz: null,
+quizCooldownUntil: 0,
+isSecretChat: false,
+customTeacherQuiz: null,
+localStream: null,
+isBoardActive: false
+};
+​function showToast(msg, isErr = false) {
+const t = document.getElementById('toast');
+document.getElementById('toastText').innerText = msg;
+t.className = fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold ${isErr ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'};
+t.classList.remove('hidden');
+setTimeout(() => t.classList.add('hidden'), 3000);
+}
+​function switchLobbyRole(role) {
+const isTeacher = role === 'teacher';
+state.role = role;
+state.isTeacher = isTeacher;
+document.getElementById('tabTeacher').className = isTeacher ? 'py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition' : 'py-2.5 rounded-xl text-xs font-bold text-slate-400';
+document.getElementById('tabStudent').className = !isTeacher ? 'py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white transition' : 'py-2.5 rounded-xl text-xs font-bold text-slate-400';
+document.getElementById('teacherLobbyForm').classList.toggle('hidden', !isTeacher);
+document.getElementById('studentLobbyForm').classList.toggle('hidden', isTeacher);
+}
+​function handleStartTeacher(e) {
+e.preventDefault();
+const name = document.getElementById('tNameInput').value.trim() || '김선생님';
+const title = document.getElementById('tTitleInput').value.trim() || '라이브 수업';
+const roomCode = String(Math.floor(100000 + Math.random() * 900000));
+state.roomCode = roomCode;
+state.isTeacher = true;
+​enterStudioMode(name, title, roomCode);
+showToast(👨‍🏫 방 개설 완료! 참여 코드: ${roomCode});
+}
+​function handleJoinStudent(e) {
+e.preventDefault();
+const nickname = document.getElementById('sNicknameInput').value.trim();
+const roomCode = document.getElementById('sRoomCodeInput').value.trim();
+if (!nickname || roomCode.length !== 6) return showToast('코드 6자리를 확인하세요.', true);
+state.roomCode = roomCode;
+state.isTeacher = false;
+​enterStudioMode(nickname, '라이브 수업', roomCode);
+showToast('🎓 수업에 입장했습니다! (300pt)');
+}
+​function enterStudioMode(name, title, roomCode) {
+document.getElementById('lobbyView').classList.add('hidden');
+document.getElementById('studioView').classList.remove('hidden');
+document.getElementById('headerStats').classList.remove('hidden');
+document.getElementById('liveBadge').classList.remove('hidden');
+document.getElementById('leaveRoomBtn').classList.remove('hidden');
+document.getElementById('headerSubtitle').innerText = 코드: ${roomCode};
+document.getElementById('studioMainTitle').innerText = title;
+​if (state.isTeacher) {
+document.getElementById('teacherQuizBtn').classList.remove('hidden');
+document.getElementById('teacherNoticeBtn').classList.remove('hidden');
+document.getElementById('camBtn').classList.remove('hidden');
+document.getElementById('screenBtn').classList.remove('hidden');
+document.getElementById('boardBtn').classList.remove('hidden');
+document.getElementById('leaveBtnText').innerText = '라이브 방송 종료';
+} else {
+document.getElementById('leaveBtnText').innerText = '라이브 나가기';
+}
+}
+​function leaveLiveRoom() {
+if (state.localStream) state.localStream.getTracks().forEach(t => t.stop());
+location.reload();
+}
+​async function toggleCamera() {
+const video = document.getElementById('teacherVideo');
+const defaultContent = document.getElementById('defaultStageContent');
+try {
+if (!state.localStream) {
+state.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+video.srcObject = state.localStream;
+video.classList.remove('hidden');
+defaultContent.classList.add('hidden');
+document.getElementById('camBtn').className = 'bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
+document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video-slash"></i><span>카메라 끄기</span>';
+showToast('📷 카메라가 켜졌습니다!');
+} else {
+state.localStream.getTracks().forEach(t => t.stop());
+state.localStream = null;
+video.srcObject = null;
+video.classList.add('hidden');
+defaultContent.classList.remove('hidden');
+document.getElementById('camBtn').className = 'bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
+document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video"></i><span>카메라 켜기</span>';
+showToast('카메라가 꺼졌습니다.');
+}
+} catch {
+showToast('카메라 권한을 허용해주세요.', true);
+}
+}
+​async function toggleScreenShare() {
+const video = document.getElementById('teacherVideo');
+const defaultContent = document.getElementById('defaultStageContent');
+try {
+const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+video.srcObject = stream;
+video.classList.remove('hidden');
+defaultContent.classList.add('hidden');
+showToast('🖥️ 화면 공유 시작!');
+stream.getVideoTracks()[0].onended = () => {
+video.srcObject = null;
+video.classList.add('hidden');
+defaultContent.classList.remove('hidden');
+};
+} catch {
+showToast('화면 공유 취소', true);
+}
+}
+​function toggleWhiteboard() {
+state.isBoardActive = !state.isBoardActive;
+const canvas = document.getElementById('whiteboardCanvas');
+const tools = document.getElementById('whiteboardTools');
+canvas.classList.toggle('hidden', !state.isBoardActive);
+tools.classList.toggle('hidden', !state.isBoardActive);
+​if (state.isBoardActive) {
+initWhiteboard();
+showToast('🖍️ 스마트 칠판 켜짐');
+} else {
+showToast('칠판 닫힘');
+}
+}
+​let ctx, isDrawing = false, drawColor = '#ffffff';
+function initWhiteboard() {
+const canvas = document.getElementById('whiteboardCanvas');
+canvas.width = canvas.parentElement.clientWidth;
+canvas.height = canvas.parentElement.clientHeight;
+ctx = canvas.getContext('2d');
+ctx.strokeStyle = drawColor;
+ctx.lineWidth = 4;
+ctx.lineCap = 'round';
+​canvas.onmousedown = (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); };
+canvas.onmousemove = (e) => { if (!isDrawing) return; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); };
+canvas.onmouseup = () => { isDrawing = false; };
+}
+​function setDrawColor(col) { drawColor = col; if (ctx) ctx.strokeStyle = col; }
+function clearWhiteboard() { if (ctx) ctx.clearRect(0, 0, 10000, 10000); }
+​function updateUI() {
+if (state.balance > 3000) state.balance = 3000;
+document.getElementById('myBalance').innerText = ${state.balance} pt;
+document.getElementById('unlockBadge').innerText = 후원 ${state.totalTeacherDonations}pt;
+document.getElementById('teacherTotalDonationDisplay').innerText = state.totalTeacherDonations;
+if (state.totalTeacherDonations >= 7000) document.getElementById('penaltyVoteContainer').classList.remove('hidden');
+renderStickers();
+}
+​function toggleSubscribe() {
+updateUI();
+showToast('구독 완료! 🔔');
+document.getElementById('subCount').innerText = parseInt(document.getElementById('subCount').innerText) + 1;
+}
+​function addLike() {
+document.getElementById('likeCount').innerText = parseInt(document.getElementById('likeCount').innerText) + 1;
+showToast('좋아요! ❤️');
+}
+​let audioCtx, bgmTimer;
+function changeBgm() {
+const mode = document.getElementById('bgmSelect').value;
+if (bgmTimer) { clearInterval(bgmTimer); bgmTimer = null; }
+if (mode === 'none') return showToast('BGM 종료');
+showToast('🎵 BGM 재생!');
+const notes = [261.63, 329.63, 392.00, 523.25];
+let step = 0;
+bgmTimer = setInterval(() => {
+try {
+if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const osc = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
+osc.frequency.setValueAtTime(notes[step % notes.length], audioCtx.currentTime);
+gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+osc.connect(gain); gain.connect(audioCtx.destination);
+osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+step++;
+} catch {}
+}, 300);
+}
+​function toggleStickers() { document.getElementById('stickerDrawer').classList.toggle('hidden'); }
+function renderStickers() {
+document.getElementById('stickerGrid').innerHTML = STICKERS.map(st => <button onclick="sendSticker('${st.icon}')" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-center"> <span class="text-xl">${st.icon}</span> <span class="block text-[9px] text-amber-300">${st.label}</span> </button>).join('');
+}
+function sendSticker(icon) { appendChat('나', [스티커], icon); document.getElementById('stickerDrawer').classList.add('hidden'); }
+​function toggleSecretChatMode() {
+state.isSecretChat = !state.isSecretChat;
+showToast(state.isSecretChat ? '비밀채팅 모드 ON' : '일반채팅 모드 ON');
+}
+​function sendChat(e) {
+e.preventDefault();
+const input = document.getElementById('chatInput');
+const txt = input.value.trim();
+if (!txt) return;
+input.value = '';
+appendChat('나', txt);
+}
+​function appendChat(sender, msg, icon = null) {
+const box = document.getElementById('chatBox');
+const div = document.createElement('div');
+div.className = 'p-2.5 rounded-2xl bg-slate-800/80 text-xs';
+div.innerHTML = <span class="font-bold text-emerald-400">${escapeHtml(sender)}</span>: <span class="text-slate-100">${escapeHtml(msg)} ${icon || ''}</span>;
+box.appendChild(div);
+box.scrollTop = box.scrollHeight;
+}
+​function openEarnModal() { document.getElementById('earnModal').classList.remove('hidden'); switchEarn('quiz'); }
+function switchEarn(tab) {
+document.getElementById('quizSection').classList.toggle('hidden', tab !== 'quiz');
+document.getElementById('rouletteSection').classList.toggle('hidden', tab !== 'roulette');
+document.getElementById('rpsSection').classList.toggle('hidden', tab !== 'rps');
+if (tab === 'quiz' && !state.currentQuiz) nextQuiz();
+}
+​function nextQuiz() {
+const now = Date.now();
+if (now < state.quizCooldownUntil) {
+const remain = Math.ceil((state.quizCooldownUntil - now) / 1000);
+return showToast(⏳ 쿨타임 중 (${remain}초), true);
+}
+​let item = state.customTeacherQuiz || QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)];
+state.customTeacherQuiz = null;
+const opts = [...item.a].sort(() => Math.random() - 0.5);
+state.currentQuiz = { correct: item.a[0], opts };
+document.getElementById('qText').innerText = item.q;
+document.getElementById('qFeedback').classList.add('hidden');
+document.getElementById('qOptions').innerHTML = opts.map((o, i) => <button onclick="answerQuiz('${o}')" class="w-full text-left bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-slate-200">${i+1}. ${escapeHtml(o)}</button>).join('');
+}
+​function answerQuiz(chosen) {
+const correct = chosen === state.currentQuiz.correct;
+const fb = document.getElementById('qFeedback');
+fb.classList.remove('hidden');
+if (correct) {
+state.balance += 100; updateUI();
+fb.className = 'p-3 rounded-xl text-xs font-black text-center bg-emerald-600/20 text-emerald-300';
+fb.innerText = '정답! +100pt';
+} else {
+fb.className = 'p-3 rounded-xl text-xs font-black text-center bg-red-600/20 text-red-300';
+fb.innerText = 오답! 정답은 ${state.currentQuiz.correct};
+}
+state.quizCooldownUntil = Date.now() + 25000;
+}
+​function spinRoulette() {
+if (state.balance < 200) return showToast('포인트 부족 (200pt 필요)', true);
+state.balance -= 200; updateUI();
+const deltas = [500, 200, -200, -300, 800];
+const d = deltas[Math.floor(Math.random() * deltas.length)];
+state.balance += d; updateUI();
+showToast(룰렛 결과: ${d > 0 ? '+' + d : d}pt, d < 0);
+}
+​function playRps(user) {
+const hands = ['가위', '바위', '보'];
+const bot = hands[Math.floor(Math.random() * 3)];
+document.getElementById('rpsMyHand').innerText = user === '가위' ? '✌️' : user === '바위' ? '✊' : '🖐️';
+document.getElementById('rpsBotHand').innerText = bot === '가위' ? '✌️' : bot === '바위' ? '✊' : '🖐️';
+if (user === bot) { state.balance += 30; showToast('비김 +30pt'); }
+else if ((user==='가위'&&bot==='보')||(user==='바위'&&bot==='가위')||(user==='보'&&bot==='바위')) { state.balance += 120; showToast('승리 +120pt'); }
+else { state.balance -= 200; showToast('패배 -200pt 감점', true); }
+updateUI();
+}
+​function openTeacherQuizModal() { if (state.isTeacher) document.getElementById('teacherQuizModal').classList.remove('hidden'); }
+function publishTeacherQuiz() {
+const q = document.getElementById('customQuizQ').value.trim();
+const correct = document.getElementById('customQuizCorrect').value.trim();
+const w1 = document.getElementById('customQuizWrong1').value.trim() || '오답1';
+const w2 = document.getElementById('customQuizWrong2').value.trim() || '오답2';
+if (!q || !correct) return showToast('질문과 정답 입력 필요', true);
+state.customTeacherQuiz = { s: '커스텀', q, a: [correct, w1, w2] };
+document.getElementById('teacherQuizModal').classList.add('hidden');
+showToast('선생님 퀴즈 출제 완료!');
+}
+​function openTeacherNoticeModal() { if (state.isTeacher) document.getElementById('teacherNoticeModal').classList.remove('hidden'); }
+function publishTeacherNotice() {
+const txt = document.getElementById('customNoticeText').value.trim();
+if (!txt) return;
+document.getElementById('noticeBannerText').innerText = txt;
+document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
+document.getElementById('teacherNoticeModal').classList.add('hidden');
+showToast('공지 등록 완료!');
+}
+​function openPenaltyVoteModal() {
+document.getElementById('penaltyListContainer').innerHTML = PENALTIES_50.map(p => <label class="flex items-center gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800 cursor-pointer"> <input type="radio" name="pVote" value="${p}"> <span class="text-xs text-white">${p}</span> </label>).join('');
+document.getElementById('penaltyVoteModal').classList.remove('hidden');
+}
+function submitPenaltyVote() { document.getElementById('penaltyVoteModal').classList.add('hidden'); showToast('벌칙 투표 완료!'); }
+​function openDonateModal() { document.getElementById('donateModal').classList.remove('hidden'); }
+function sendDonation() {
+const amt = parseInt(document.getElementById('dAmount').value);
+if (state.balance < amt) return showToast('포인트 부족', true);
+state.balance -= amt; state.totalTeacherDonations += amt;
+updateUI();
+document.getElementById('donateModal').classList.add('hidden');
+showToast(${amt}pt 후원 성공!);
+}
+​function escapeHtml(str) { return str ? String(str).replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>') : ''; }
+updateUI();
+</script>
 </body>
 </html>
