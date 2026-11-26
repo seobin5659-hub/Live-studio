@@ -10,10 +10,7 @@ app.use(express.static(__dirname));
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    },
+    cors: { origin: "*", methods: ["GET", "POST"] },
     maxHttpBufferSize: 1e8
 });
 
@@ -30,21 +27,15 @@ io.on('connection', (socket) => {
             likes: 0,
             bgm: 'none',
             latestNotice: null,
-            latestFrame: null,
             history: []
         };
-        socket.emit('room_created', {
-            roomCode,
-            title,
-            subscribers: rooms[roomCode].subscribers,
-            likes: rooms[roomCode].likes
-        });
+        socket.emit('room_created', { roomCode, title, subscribers: 124, likes: 0 });
     });
 
     socket.on('join_room', ({ roomCode, nickname }) => {
         const room = rooms[roomCode];
         if (!room) {
-            socket.emit('join_error', '존재하지 않는 참여 코드입니다. 선생님께 6자리 코드를 다시 확인해 주세요.');
+            socket.emit('join_error', '존재하지 않는 6자리 참여 코드입니다. 선생님께 코드를 다시 확인해 주세요.');
             return;
         }
 
@@ -55,19 +46,10 @@ io.on('connection', (socket) => {
             subscribers: room.subscribers,
             likes: room.likes,
             bgm: room.bgm,
-            latestNotice: room.latestNotice,
-            latestFrame: room.latestFrame,
-            history: room.history
+            latestNotice: room.latestNotice
         });
 
         io.to(roomCode).emit('system_message', `${nickname} 학생이 수업에 입장했습니다.`);
-    });
-
-    socket.on('stream_frame', ({ roomCode, frame }) => {
-        if (rooms[roomCode]) {
-            rooms[roomCode].latestFrame = frame;
-            socket.to(roomCode).emit('stream_frame', { frame });
-        }
     });
 
     socket.on('whiteboard_draw', ({ roomCode, drawData }) => {
@@ -79,9 +61,6 @@ io.on('connection', (socket) => {
         if (!room) return;
         room.subscribers += subscribed ? 1 : -1;
         io.to(roomCode).emit('stats_update', { subscribers: room.subscribers, likes: room.likes });
-        if (subscribed) {
-            io.to(roomCode).emit('system_message', `🔔 ${nickname}님이 선생님 채널을 구독했습니다!`);
-        }
     });
 
     socket.on('add_like', ({ roomCode }) => {
@@ -89,35 +68,18 @@ io.on('connection', (socket) => {
         if (!room) return;
         room.likes += 1;
         io.to(roomCode).emit('stats_update', { subscribers: room.subscribers, likes: room.likes });
-        io.to(roomCode).emit('live_event', { roomCode, type: 'heart' });
-    });
-
-    socket.on('change_bgm', ({ roomCode, bgm }) => {
-        const room = rooms[roomCode];
-        if (!room) return;
-        room.bgm = bgm;
-        io.to(roomCode).emit('bgm_update', { bgm });
     });
 
     socket.on('live_event', (payload) => {
         const { roomCode, type } = payload;
         const room = rooms[roomCode];
         if (!room) return;
-
-        if (type === 'notice') {
-            room.latestNotice = payload.message;
-        }
-
-        if (type === 'chat' || type === 'donation' || type === 'notice') {
-            room.history.push(payload);
-            if (room.history.length > 50) room.history.shift();
-        }
-
+        if (type === 'notice') room.latestNotice = payload.message;
         io.to(roomCode).emit('live_event', payload);
     });
 });
 
-app.get('/', (req, res) => {
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
