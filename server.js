@@ -27,7 +27,7 @@ io.on('connection', (socket) => {
             likes: 0,
             bgm: 'none',
             latestNotice: null,
-            history: []
+            latestQuiz: null
         };
         socket.emit('room_created', { roomCode, title, subscribers: 124, likes: 0 });
     });
@@ -46,17 +46,22 @@ io.on('connection', (socket) => {
             subscribers: room.subscribers,
             likes: room.likes,
             bgm: room.bgm,
-            latestNotice: room.latestNotice
+            latestNotice: room.latestNotice,
+            latestQuiz: room.latestQuiz
         });
 
         io.to(roomCode).emit('system_message', `${nickname} 학생이 수업에 입장했습니다.`);
+    });
+
+    socket.on('send_chat', ({ roomCode, sender, message, icon, isSecret }) => {
+        io.to(roomCode).emit('new_chat', { sender, message, icon, isSecret });
     });
 
     socket.on('whiteboard_draw', ({ roomCode, drawData }) => {
         socket.to(roomCode).emit('whiteboard_draw', drawData);
     });
 
-    socket.on('toggle_subscribe', ({ roomCode, subscribed, nickname }) => {
+    socket.on('toggle_subscribe', ({ roomCode, subscribed }) => {
         const room = rooms[roomCode];
         if (!room) return;
         room.subscribers += subscribed ? 1 : -1;
@@ -68,6 +73,13 @@ io.on('connection', (socket) => {
         if (!room) return;
         room.likes += 1;
         io.to(roomCode).emit('stats_update', { subscribers: room.subscribers, likes: room.likes });
+    });
+
+    socket.on('teacher_quiz', ({ roomCode, quizData }) => {
+        const room = rooms[roomCode];
+        if (!room) return;
+        room.latestQuiz = quizData;
+        io.to(roomCode).emit('teacher_quiz', quizData);
     });
 
     socket.on('live_event', (payload) => {
