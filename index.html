@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>선생님 실시간 라이브 스튜디오 ULTIMATE PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
@@ -57,7 +56,18 @@
         <span id="toastText">알림 메시지</span>
     </div>
 
-    <!-- 1. 초기 역할 선택 로비 -->
+    <!-- 후원 화면 중앙 팝업 오버레이 -->
+    <div id="donationAlertOverlay" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-gradient-to-tr from-amber-600 via-orange-600 to-purple-600 border-2 border-amber-300 rounded-3xl p-6 max-w-lg w-full text-center space-y-4 shadow-2xl animate-bounce">
+            <div class="text-xs font-black text-amber-200 tracking-widest uppercase">🎁 대형 후원 알림!</div>
+            <h2 id="alertDonatorName" class="text-xl font-black text-white">누구누구님이 1000pt 후원하셨습니다!</h2>
+            <p id="alertDonationMsg" class="text-sm font-bold text-slate-100 bg-black/30 p-3 rounded-2xl">응원 메시지 내용</p>
+            <div id="alertMediaContainer" class="flex justify-center"></div>
+            <button onclick="document.getElementById('donationAlertOverlay').classList.add('hidden')" class="bg-white text-slate-950 font-black px-6 py-2.5 rounded-xl text-xs shadow-lg">확인</button>
+        </div>
+    </div>
+
+    <!-- 1. 초기 역할 선택 로비 화면 -->
     <main id="lobbyView" class="flex-1 flex items-center justify-center p-4">
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
             <div class="text-center">
@@ -106,8 +116,9 @@
 
     <!-- 2. 메인 라이브 스튜디오 화면 -->
     <main id="studioView" class="hidden flex-1 max-w-[1550px] w-full mx-auto p-3 md:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- 왼쪽: 영상 송출 및 제어 영역 (8칸) -->
         <div class="lg:col-span-8 flex flex-col gap-3">
-            <!-- 공지 배너 -->
+            <!-- 선생님 공지 (맨 위에 아주 크게 고정) -->
             <div id="pinnedNoticeBanner" class="hidden bg-gradient-to-r from-amber-600 to-orange-600 border-2 border-amber-300 rounded-3xl p-5 shadow-2xl flex items-center justify-between gap-4">
                 <div class="flex items-center gap-3 text-white">
                     <div class="w-12 h-12 rounded-2xl bg-black/30 flex items-center justify-center text-2xl flex-shrink-0">
@@ -123,27 +134,41 @@
                 </button>
             </div>
 
-            <!-- 영상 및 칠판 스테이지 -->
+            <!-- 영상 송출 및 스마트 칠판 스테이지 -->
             <div id="stageContainer" class="relative aspect-video bg-slate-900 rounded-3xl border border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl">
+                <!-- 기본 대기 화면 -->
                 <div id="defaultStageContent" class="text-center p-6 z-10">
                     <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500 text-2xl">
                         <i class="fa-solid fa-chalkboard-user"></i>
                     </div>
                     <p class="text-sm font-bold text-slate-300" id="studioMainTitle">선생님 라이브 방송 송출 화면</p>
-                    <p class="text-xs text-slate-500 mt-1">카메라, 화면 공유, 스마트 칠판 판서 기능을 이용해보세요!</p>
+                    <p class="text-xs text-slate-500 mt-1">카메라 켜기, 화면 공유, 스마트 칠판 판서 기능을 이용해보세요!</p>
                 </div>
 
+                <!-- 선생님 카메라 비디오 -->
                 <video id="teacherVideo" autoplay playsinline muted class="hidden absolute inset-0 w-full h-full object-cover z-0"></video>
+
+                <!-- 스마트 판서 칠판 Canvas -->
                 <canvas id="whiteboardCanvas" class="hidden absolute inset-0 w-full h-full z-25 cursor-crosshair"></canvas>
 
+                <!-- 칠판 도구 바 (선생님 전용) -->
                 <div id="whiteboardTools" class="hidden absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-slate-950/90 border border-slate-700 p-1.5 rounded-xl shadow-xl">
-                    <button onclick="setDrawColor('#ffffff')" class="w-6 h-6 rounded-full bg-white border border-slate-600"></button>
-                    <button onclick="setDrawColor('#facc15')" class="w-6 h-6 rounded-full bg-amber-400"></button>
-                    <button onclick="setDrawColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500"></button>
-                    <button onclick="setDrawColor('#38bdf8')" class="w-6 h-6 rounded-full bg-sky-400"></button>
+                    <button onclick="setDrawColor('#ffffff')" class="w-6 h-6 rounded-full bg-white border border-slate-600" title="흰색"></button>
+                    <button onclick="setDrawColor('#facc15')" class="w-6 h-6 rounded-full bg-amber-400" title="노랑"></button>
+                    <button onclick="setDrawColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500" title="빨강"></button>
+                    <button onclick="setDrawColor('#38bdf8')" class="w-6 h-6 rounded-full bg-sky-400" title="파랑"></button>
+                    <label class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer">
+                        사진넣기 <input type="file" accept="image/*" onchange="uploadWhiteboardImage(event)" class="hidden">
+                    </label>
                     <button onclick="clearWhiteboard()" class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold">지우기</button>
                 </div>
 
+                <!-- 전체화면 토글 버튼 -->
+                <button onclick="toggleFullscreenStage()" class="absolute bottom-3 right-3 z-30 bg-slate-950/80 hover:bg-slate-900 border border-slate-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg flex items-center gap-1.5">
+                    <i class="fa-solid fa-expand"></i><span>전체화면</span>
+                </button>
+
+                <!-- 후원 7000pt 벌칙 투표 배너 -->
                 <div id="penaltyVoteContainer" class="hidden absolute top-3 left-3 right-3 bg-slate-950/95 border border-amber-500 rounded-2xl p-3 z-30 shadow-2xl">
                     <div class="flex items-center justify-between text-xs mb-2">
                         <span class="font-black text-amber-400"><i class="fa-solid fa-crown mr-1"></i>후원 누적 7,000pt 돌파! 벌칙 투표 오픈!</span>
@@ -167,6 +192,7 @@
                         <span>좋아요</span>
                     </button>
 
+                    <!-- BGM 플레이어 -->
                     <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
                         <i class="fa-solid fa-music text-indigo-400 text-xs"></i>
                         <select id="bgmSelect" onchange="changeBgm()" class="bg-transparent text-xs text-slate-200 font-bold focus:outline-none">
@@ -204,7 +230,7 @@
             </div>
         </div>
 
-        <!-- 오른쪽: 실시간 댓글 -->
+        <!-- 오른쪽: 실시간 채팅 및 비밀채팅 (4칸) -->
         <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[590px] lg:h-[660px] overflow-hidden shadow-2xl">
             <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
                 <div class="flex items-center gap-2">
@@ -220,14 +246,19 @@
             </div>
 
             <div id="chatBox" class="flex-1 p-3.5 overflow-y-auto chat-scroll space-y-2.5 text-xs">
-                <div class="text-center text-slate-500 py-2">실시간 채팅방입니다!</div>
+                <div class="text-center text-slate-500 py-2">실시간 채팅방입니다! (도배 방지 9초)</div>
             </div>
 
+            <!-- 스티커 서랍 -->
             <div id="stickerDrawer" class="hidden border-t border-slate-800 bg-slate-950 p-3 space-y-2">
                 <div class="flex items-center justify-between text-[11px]">
                     <span class="font-black text-amber-400"><i class="fa-solid fa-face-smile mr-1"></i>후원 해금 이모지 & GIF</span>
                 </div>
                 <div id="stickerGrid" class="grid grid-cols-4 gap-1.5"></div>
+            </div>
+
+            <div id="spamBar" class="hidden bg-red-600/20 border-t border-red-500/40 px-3 py-1.5 text-[11px] font-bold text-red-300 text-center">
+                🚫 도배 방지! <span id="spamSec">9</span>초 동안 채팅 금지
             </div>
 
             <form onsubmit="sendChat(event)" class="p-2.5 border-t border-slate-800 bg-slate-950 flex gap-1.5 items-center">
@@ -240,7 +271,7 @@
         </div>
     </main>
 
-    <!-- 퀴즈 & 룰렛 모달 -->
+    <!-- 포인트 얻기 모달 (25초 쿨타임 퀴즈 + 200pt 룰렛 + 가위바위보 -200pt) -->
     <div id="earnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between">
@@ -249,12 +280,21 @@
             </div>
 
             <div class="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-[11px] font-bold">
-                <button type="button" id="tabQuizBtn" onclick="switchEarn('quiz')" class="py-2 rounded-xl bg-indigo-600 text-white">📚 퀴즈 (25초)</button>
-                <button type="button" id="tabRouletteBtn" onclick="switchEarn('roulette')" class="py-2 rounded-xl text-slate-400">🎰 200pt 룰렛</button>
-                <button type="button" id="tabRpsBtn" onclick="switchEarn('rps')" class="py-2 rounded-xl text-slate-400">✊ 가위바위보</button>
+                <button type="button" id="tabQuizBtn" onclick="switchEarn('quiz')" class="py-2 rounded-xl bg-indigo-600 text-white">📚 퀴즈 (25초 쿨타임)</button>
+                <button type="button" id="tabRouletteBtn" onclick="switchEarn('roulette')" class="py-2 rounded-xl text-slate-400">🎰 200pt 룰렛 (+/-)</button>
+                <button type="button" id="tabRpsBtn" onclick="switchEarn('rps')" class="py-2 rounded-xl text-slate-400">✊ 가위바위보 (-200)</button>
             </div>
 
             <div id="quizSection" class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <select id="subjectFilter" onchange="nextQuiz()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-indigo-300 focus:outline-none">
+                        <option value="all">전체 과목 랜덤</option>
+                        <option value="사회">🌍 비상 중1 사회</option>
+                        <option value="과학">🔬 중1 과학</option>
+                        <option value="수학">📐 중1 수학</option>
+                    </select>
+                    <span id="quizCooldownText" class="text-xs text-amber-400 font-bold hidden">⏳ 쿨타임 (25초)</span>
+                </div>
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
                     <span id="quizTag" class="text-[11px] font-black text-indigo-400 bg-indigo-500/15 px-2.5 py-0.5 rounded-full">사회</span>
                     <p id="qText" class="text-sm font-bold text-white leading-relaxed">문제를 불러오는 중...</p>
@@ -267,7 +307,7 @@
             <div id="rouletteSection" class="hidden space-y-4 text-center">
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
                     <p class="text-xs text-slate-400 font-bold">비용: <span class="text-amber-400">200 pt</span> (+와 - 모두 존재)</p>
-                    <div id="rouletteWheelBox" class="w-36 h-36 mx-auto rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-amber-500 flex items-center justify-center text-3xl text-white shadow-2xl">🎰</div>
+                    <div id="rouletteWheelBox" class="w-36 h-36 mx-auto rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-amber-500 flex items-center justify-center text-3xl text-white shadow-2xl transition-transform duration-700">🎰</div>
                     <p id="rouletteResultText" class="text-sm font-black text-indigo-300">버튼을 눌러 돌리세요!</p>
                 </div>
                 <button onclick="spinRoulette()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-2xl text-sm shadow-xl">200pt 내고 룰렛 돌리기</button>
@@ -330,24 +370,23 @@
         </div>
     </div>
 
-    <!-- 후원 모달 -->
+    <!-- 후원 모달 (사진/영상 첨부 기능 포함) -->
     <div id="donateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
-            <h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>후원하기</h3>
+            <h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>후원하기 (사진/영상 첨부 가능)</h3>
             <select id="dAmount" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
                 <option value="100">100 pt</option>
                 <option value="500">500 pt</option>
                 <option value="1000" selected>1000 pt</option>
                 <option value="3000">3000 pt (후원 게이지 폭발!)</option>
             </select>
-            <input type="text" id="dMsg" placeholder="응원 메시지" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
+            <input type="text" id="dMsg" placeholder="응원 메시지 (선생님이 음성으로 읽어줍니다!)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
+            <input type="text" id="dMediaUrl" placeholder="사진 이미지 URL 또는 유튜브 링크 (선택)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
             <button onclick="sendDonation()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-xl text-sm">후원 보내기</button>
         </div>
     </div>
 
     <script>
-        const socket = io();
-
         const STICKERS = [
             { id: 's1', req: 0, type: 'emoji', icon: '👍', label: '엄지척' },
             { id: 's3', req: 100, type: 'emoji', icon: '🔥', label: '100pt 열정' },
@@ -369,6 +408,8 @@
             nickname: '',
             balance: 300,
             totalTeacherDonations: 0,
+            chatCount: 0,
+            lockUntil: 0,
             currentQuiz: null,
             quizCooldownUntil: 0,
             isSecretChat: false,
@@ -404,13 +445,9 @@
             state.nickname = name;
             state.isTeacher = true;
 
-            socket.emit('create_room', { roomCode, teacherName: name, title });
-        }
-
-        socket.on('room_created', ({ roomCode, title }) => {
-            enterStudioMode(state.nickname, title, roomCode);
+            enterStudioMode(name, title, roomCode);
             showToast(`👨‍🏫 방 개설 완료! 참여 코드: ${roomCode}`);
-        });
+        }
 
         function handleJoinStudent(e) {
             e.preventDefault();
@@ -421,24 +458,9 @@
             state.roomCode = roomCode;
             state.isTeacher = false;
 
-            socket.emit('join_room', { roomCode, nickname });
-        }
-
-        socket.on('join_error', (msg) => {
-            showToast(msg, true);
-        });
-
-        socket.on('join_success', ({ roomCode, title, subscribers, likes, latestNotice, latestQuiz }) => {
-            enterStudioMode(state.nickname, title, roomCode);
-            document.getElementById('subCount').innerText = subscribers;
-            document.getElementById('likeCount').innerText = likes;
-            if (latestNotice) {
-                document.getElementById('noticeBannerText').innerText = latestNotice;
-                document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
-            }
-            if (latestQuiz) state.customTeacherQuiz = latestQuiz;
+            enterStudioMode(nickname, '라이브 수업', roomCode);
             showToast('🎓 수업에 입장했습니다! (300pt)');
-        });
+        }
 
         function enterStudioMode(name, title, roomCode) {
             document.getElementById('lobbyView').classList.add('hidden');
@@ -477,7 +499,7 @@
                     defaultContent.classList.add('hidden');
                     document.getElementById('camBtn').className = 'bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
                     document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video-slash"></i><span>카메라 끄기</span>';
-                    showToast('📷 카메라 켜짐');
+                    showToast('📷 카메라가 켜졌습니다!');
                 } else {
                     state.localStream.getTracks().forEach(t => t.stop());
                     state.localStream = null;
@@ -486,10 +508,10 @@
                     defaultContent.classList.remove('hidden');
                     document.getElementById('camBtn').className = 'bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
                     document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video"></i><span>카메라 켜기</span>';
-                    showToast('카메라 꺼짐');
+                    showToast('카메라가 꺼졌습니다.');
                 }
             } catch {
-                showToast('카메라 권한을 확인해주세요.', true);
+                showToast('카메라 권한을 허용해주세요.', true);
             }
         }
 
@@ -501,7 +523,7 @@
                 video.srcObject = stream;
                 video.classList.remove('hidden');
                 defaultContent.classList.add('hidden');
-                showToast('🖥️ 화면 공유 시작!');
+                showToast('🖥️ 화면 공유가 시작되었습니다!');
                 stream.getVideoTracks()[0].onended = () => {
                     video.srcObject = null;
                     video.classList.add('hidden');
@@ -512,13 +534,28 @@
             }
         }
 
+        function toggleFullscreenStage() {
+            const container = document.getElementById('stageContainer');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
         function toggleWhiteboard() {
             state.isBoardActive = !state.isBoardActive;
             const canvas = document.getElementById('whiteboardCanvas');
             const tools = document.getElementById('whiteboardTools');
             canvas.classList.toggle('hidden', !state.isBoardActive);
             tools.classList.toggle('hidden', !state.isBoardActive);
-            if (state.isBoardActive) { initWhiteboard(); showToast('🖍️ 스마트 칠판 켜짐'); }
+
+            if (state.isBoardActive) {
+                initWhiteboard();
+                showToast('🖍️ 스마트 칠판이 열렸습니다!');
+            } else {
+                showToast('칠판이 닫혔습니다.');
+            }
         }
 
         let ctx, isDrawing = false, drawColor = '#ffffff';
@@ -532,24 +569,27 @@
             ctx.lineCap = 'round';
 
             canvas.onmousedown = (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); };
-            canvas.onmousemove = (e) => {
-                if (!isDrawing) return;
-                ctx.lineTo(e.offsetX, e.offsetY);
-                ctx.stroke();
-                socket.emit('whiteboard_draw', { roomCode: state.roomCode, drawData: { x: e.offsetX, y: e.offsetY, color: drawColor } });
-            };
+            canvas.onmousemove = (e) => { if (!isDrawing) return; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); };
             canvas.onmouseup = () => { isDrawing = false; };
         }
 
-        socket.on('whiteboard_draw', ({ x, y, color }) => {
-            if (!ctx) return;
-            ctx.strokeStyle = color;
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        });
-
         function setDrawColor(col) { drawColor = col; if (ctx) ctx.strokeStyle = col; }
         function clearWhiteboard() { if (ctx) ctx.clearRect(0, 0, 10000, 10000); }
+
+        function uploadWhiteboardImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 50, 50, img.width > 400 ? 400 : img.width, img.height > 300 ? 300 : img.height);
+                    showToast('🖼️ 칠판에 사진이 추가되었습니다!');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
 
         function updateUI() {
             if (state.balance > 3000) state.balance = 3000;
@@ -561,23 +601,15 @@
         }
 
         function toggleSubscribe() {
-            socket.emit('toggle_subscribe', { roomCode: state.roomCode, subscribed: true });
+            updateUI();
             showToast('구독 완료! 🔔');
+            document.getElementById('subCount').innerText = parseInt(document.getElementById('subCount').innerText) + 1;
         }
 
         function addLike() {
-            socket.emit('add_like', { roomCode: state.roomCode });
+            document.getElementById('likeCount').innerText = parseInt(document.getElementById('likeCount').innerText) + 1;
             showToast('좋아요! ❤️');
         }
-
-        socket.on('stats_update', ({ subscribers, likes }) => {
-            document.getElementById('subCount').innerText = subscribers;
-            document.getElementById('likeCount').innerText = likes;
-        });
-
-        socket.on('system_message', (msg) => {
-            appendChat('시스템', msg, null);
-        });
 
         let audioCtx, bgmTimer;
         function changeBgm() {
@@ -611,29 +643,44 @@
                 </button>
             `).join('');
         }
-        function sendSticker(icon) {
-            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname, message: '[스티커]', icon, isSecret: state.isSecretChat });
-            document.getElementById('stickerDrawer').classList.add('hidden');
-        }
+        function sendSticker(icon) { appendChat(state.nickname || '나', `[스티커]`, icon); document.getElementById('stickerDrawer').classList.add('hidden'); }
 
         function toggleSecretChatMode() {
             state.isSecretChat = !state.isSecretChat;
             showToast(state.isSecretChat ? '비밀채팅 모드 ON' : '일반채팅 모드 ON');
         }
 
+        // 도배 방지 채팅 로직 (9초 쿨타임)
         function sendChat(e) {
             e.preventDefault();
+            const now = Date.now();
+            if (now < state.lockUntil) {
+                const remain = Math.ceil((state.lockUntil - now) / 1000);
+                return showToast(`도배 방지! ${remain}초 후에 채팅 가능합니다.`, true);
+            }
+
             const input = document.getElementById('chatInput');
             const txt = input.value.trim();
             if (!txt) return;
             input.value = '';
-            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname, message: txt, isSecret: state.isSecretChat });
-        }
 
-        socket.on('new_chat', ({ sender, message, icon, isSecret }) => {
-            if (isSecret && !state.isTeacher && state.nickname !== sender && state.totalTeacherDonations < 100) return; // 비밀채팅 권한
-            appendChat(sender, message, icon);
-        });
+            appendChat(state.nickname || '나', txt);
+
+            // 도배 방지 9초 설정
+            state.lockUntil = now + 9000;
+            const spamBar = document.getElementById('spamBar');
+            const spamSec = document.getElementById('spamSec');
+            spamBar.classList.remove('hidden');
+            let sec = 9;
+            const timer = setInterval(() => {
+                sec--;
+                spamSec.innerText = sec;
+                if (sec <= 0) {
+                    clearInterval(timer);
+                    spamBar.classList.add('hidden');
+                }
+            }, 1000);
+        }
 
         function appendChat(sender, msg, icon = null) {
             const box = document.getElementById('chatBox');
@@ -656,10 +703,11 @@
             const now = Date.now();
             if (now < state.quizCooldownUntil) {
                 const remain = Math.ceil((state.quizCooldownUntil - now) / 1000);
-                return showToast(`⏳ 퀴즈 쿨타임 중 (${remain}초)`, true);
+                return showToast(`⏳ 쿨타임 중 (${remain}초)`, true);
             }
 
             let item = state.customTeacherQuiz || QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)];
+            state.customTeacherQuiz = null;
             const opts = [...item.a].sort(() => Math.random() - 0.5);
             state.currentQuiz = { correct: item.a[0], opts };
             document.getElementById('qText').innerText = item.q;
@@ -710,36 +758,21 @@
             const correct = document.getElementById('customQuizCorrect').value.trim();
             const w1 = document.getElementById('customQuizWrong1').value.trim() || '오답1';
             const w2 = document.getElementById('customQuizWrong2').value.trim() || '오답2';
-            if (!q || !correct) return showToast('질문과 정답 입력 필요', true);
-            const quizData = { s: '커스텀', q, a: [correct, w1, w2] };
-            socket.emit('teacher_quiz', { roomCode: state.roomCode, quizData });
-            state.customTeacherQuiz = quizData;
+            if (!q || !correct) return showToast('질문과 정답을 입력하세요.', true);
+            state.customTeacherQuiz = { s: '커스텀', q, a: [correct, w1, w2] };
             document.getElementById('teacherQuizModal').classList.add('hidden');
-            showToast('선생님 퀴즈가 학생들에게 송출되었습니다!');
+            showToast('퀴즈 출제 완료!');
         }
-
-        socket.on('teacher_quiz', (quizData) => {
-            state.customTeacherQuiz = quizData;
-            showToast('🔔 선생님이 새로운 퀴즈를 출제했습니다!');
-        });
 
         function openTeacherNoticeModal() { if (state.isTeacher) document.getElementById('teacherNoticeModal').classList.remove('hidden'); }
         function publishTeacherNotice() {
             const txt = document.getElementById('customNoticeText').value.trim();
             if (!txt) return;
-            socket.emit('live_event', { roomCode: state.roomCode, type: 'notice', message: txt });
             document.getElementById('noticeBannerText').innerText = txt;
             document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
             document.getElementById('teacherNoticeModal').classList.add('hidden');
             showToast('공지 등록 완료!');
         }
-
-        socket.on('live_event', (payload) => {
-            if (payload.type === 'notice') {
-                document.getElementById('noticeBannerText').innerText = payload.message;
-                document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
-            }
-        });
 
         function openPenaltyVoteModal() {
             document.getElementById('penaltyListContainer').innerHTML = PENALTIES_50.map(p => `
@@ -752,15 +785,48 @@
         function submitPenaltyVote() { document.getElementById('penaltyVoteModal').classList.add('hidden'); showToast('투표 완료!'); }
 
         function openDonateModal() { document.getElementById('donateModal').classList.remove('hidden'); }
+        
+        // 후원 전송 및 화면 팝업 + TTS 음성 읽어주기
         function sendDonation() {
             const amt = parseInt(document.getElementById('dAmount').value);
             const msg = document.getElementById('dMsg').value.trim() || '후원합니다!';
-            if (state.balance < amt) return showToast('포인트 부족', true);
-            state.balance -= amt; state.totalTeacherDonations += amt;
+            const mediaUrl = document.getElementById('dMediaUrl').value.trim();
+
+            if (state.balance < amt) return showToast('포인트가 부족합니다!', true);
+            state.balance -= amt;
+            state.totalTeacherDonations += amt;
             updateUI();
-            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname, message: `🎁 ${amt}pt 후원: "${msg}"` });
             document.getElementById('donateModal').classList.add('hidden');
+
+            // 후원 팝업 표시
+            triggerDonationAlert(state.nickname || '학생', amt, msg, mediaUrl);
+            
+            // TTS 음성 읽어주기
+            if ('speechSynthesis' in window) {
+                const speech = new SpeechSynthesisUtterance(`${state.nickname || '학생'}님이 ${amt}포인트를 후원하셨습니다. 메시지: ${msg}`);
+                speech.lang = 'ko-KR';
+                window.speechSynthesis.speak(speech);
+            }
+
+            appendChat(state.nickname || '학생', `🎁 ${amt}pt 후원: "${msg}"`);
             showToast(`${amt}pt 후원 성공!`);
+        }
+
+        function triggerDonationAlert(donator, amt, msg, mediaUrl) {
+            document.getElementById('alertDonatorName').innerText = `${donator}님이 ${amt}pt를 후원하셨습니다!`;
+            document.getElementById('alertDonationMsg').innerText = `"${msg}"`;
+            
+            const mediaBox = document.getElementById('alertMediaContainer');
+            mediaBox.innerHTML = '';
+            if (mediaUrl) {
+                if (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be')) {
+                    const embedUrl = mediaUrl.includes('watch?v=') ? mediaUrl.replace('watch?v=', 'embed/') : mediaUrl;
+                    mediaBox.innerHTML = `<iframe src="${embedUrl}" class="w-full h-48 rounded-2xl shadow-lg" allowfullscreen></iframe>`;
+                } else {
+                    mediaBox.innerHTML = `<img src="${mediaUrl}" class="max-h-48 rounded-2xl shadow-lg object-contain">`;
+                }
+            }
+            document.getElementById('donationAlertOverlay').classList.remove('hidden');
         }
 
         function escapeHtml(str) { return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
