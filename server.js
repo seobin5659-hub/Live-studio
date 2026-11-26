@@ -47,6 +47,14 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('system_message', nickname + ' 학생이 수업에 입장했습니다.');
     });
 
+    socket.on('stream_frame', ({ roomCode, frame }) => {
+        socket.to(roomCode).emit('stream_frame', { frame });
+    });
+
+    socket.on('whiteboard_draw', ({ roomCode, drawData }) => {
+        socket.to(roomCode).emit('whiteboard_draw', drawData);
+    });
+
     socket.on('send_chat', ({ roomCode, sender, message, icon }) => {
         io.to(roomCode).emit('new_chat', { sender, message, icon });
     });
