@@ -1,3 +1,4 @@
+```javascript
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -14,7 +15,7 @@ const io = new Server(server, {
         origin: "*",
         methods: ["GET", "POST"]
     },
-    maxHttpBufferSize: 1e7
+    maxHttpBufferSize: 1e8
 });
 
 const rooms = {};
@@ -70,6 +71,10 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('whiteboard_draw', ({ roomCode, drawData }) => {
+        socket.to(roomCode).emit('whiteboard_draw', drawData);
+    });
+
     socket.on('toggle_subscribe', ({ roomCode, subscribed, nickname }) => {
         const room = rooms[roomCode];
         if (!room) return;
@@ -121,3 +126,4 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
 });
+```
