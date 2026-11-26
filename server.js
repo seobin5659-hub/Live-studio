@@ -1,4 +1,3 @@
-```javascript
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -45,7 +44,7 @@ io.on('connection', (socket) => {
             likes: room.likes
         });
 
-        io.to(roomCode).emit('system_message', `${nickname} 학생이 수업에 입장했습니다.`);
+        io.to(roomCode).emit('system_message', nickname + ' 학생이 수업에 입장했습니다.');
     });
 
     socket.on('send_chat', ({ roomCode, sender, message, icon }) => {
@@ -78,5 +77,5 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log('Server running on port ' + PORT);
 });
