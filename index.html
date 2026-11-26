@@ -158,7 +158,7 @@
                     <button onclick="setDrawColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500" title="빨강"></button>
                     <button onclick="setDrawColor('#38bdf8')" class="w-6 h-6 rounded-full bg-sky-400" title="파랑"></button>
                     <label class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer">
-                        사진넣기 <input type="file" accept="image/*" onchange="uploadWhiteboardImage(event)" class="hidden">
+                        내 파일 사진 <input type="file" accept="image/*" onchange="uploadWhiteboardImage(event)" class="hidden">
                     </label>
                     <button onclick="clearWhiteboard()" class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold">지우기</button>
                 </div>
@@ -370,10 +370,10 @@
         </div>
     </div>
 
-    <!-- 후원 모달 (사진/영상 첨부 기능 포함) -->
+    <!-- 후원 모달 (내 기기 사진/영상 파일 직접 선택 기능 포함) -->
     <div id="donateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4">
-            <h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>후원하기 (사진/영상 첨부 가능)</h3>
+            <h3 class="font-black text-base text-white"><i class="fa-solid fa-gift text-amber-400 mr-2"></i>후원하기 (내 파일에서 사진/영상 첨부)</h3>
             <select id="dAmount" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
                 <option value="100">100 pt</option>
                 <option value="500">500 pt</option>
@@ -381,7 +381,12 @@
                 <option value="3000">3000 pt (후원 게이지 폭발!)</option>
             </select>
             <input type="text" id="dMsg" placeholder="응원 메시지 (선생님이 음성으로 읽어줍니다!)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
-            <input type="text" id="dMediaUrl" placeholder="사진 이미지 URL 또는 유튜브 링크 (선택)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm text-white">
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-400">내 기기에서 사진 또는 영상 파일 선택</label>
+                <input type="file" id="dFile" accept="image/*,video/*" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
+            </div>
+
             <button onclick="sendDonation()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-xl text-sm">후원 보내기</button>
         </div>
     </div>
@@ -786,11 +791,11 @@
 
         function openDonateModal() { document.getElementById('donateModal').classList.remove('hidden'); }
         
-        // 후원 전송 및 화면 팝업 + TTS 음성 읽어주기
+        // 후원 전송 및 화면 팝업 + TTS 음성 읽어주기 (내 기기 파일 첨부 지원)
         function sendDonation() {
             const amt = parseInt(document.getElementById('dAmount').value);
             const msg = document.getElementById('dMsg').value.trim() || '후원합니다!';
-            const mediaUrl = document.getElementById('dMediaUrl').value.trim();
+            const fileInput = document.getElementById('dFile');
 
             if (state.balance < amt) return showToast('포인트가 부족합니다!', true);
             state.balance -= amt;
@@ -798,8 +803,17 @@
             updateUI();
             document.getElementById('donateModal').classList.add('hidden');
 
-            // 후원 팝업 표시
-            triggerDonationAlert(state.nickname || '학생', amt, msg, mediaUrl);
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const resultUrl = e.target.result;
+                    const isVideo = fileInput.files[0].type.startsWith('video');
+                    triggerDonationAlert(state.nickname || '학생', amt, msg, resultUrl, isVideo);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                triggerDonationAlert(state.nickname || '학생', amt, msg, null, false);
+            }
             
             // TTS 음성 읽어주기
             if ('speechSynthesis' in window) {
@@ -812,18 +826,17 @@
             showToast(`${amt}pt 후원 성공!`);
         }
 
-        function triggerDonationAlert(donator, amt, msg, mediaUrl) {
+        function triggerDonationAlert(donator, amt, msg, mediaSrc, isVideo) {
             document.getElementById('alertDonatorName').innerText = `${donator}님이 ${amt}pt를 후원하셨습니다!`;
             document.getElementById('alertDonationMsg').innerText = `"${msg}"`;
             
             const mediaBox = document.getElementById('alertMediaContainer');
             mediaBox.innerHTML = '';
-            if (mediaUrl) {
-                if (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be')) {
-                    const embedUrl = mediaUrl.includes('watch?v=') ? mediaUrl.replace('watch?v=', 'embed/') : mediaUrl;
-                    mediaBox.innerHTML = `<iframe src="${embedUrl}" class="w-full h-48 rounded-2xl shadow-lg" allowfullscreen></iframe>`;
+            if (mediaSrc) {
+                if (isVideo) {
+                    mediaBox.innerHTML = `<video src="${mediaSrc}" autoplay controls class="max-h-48 rounded-2xl shadow-lg"></video>`;
                 } else {
-                    mediaBox.innerHTML = `<img src="${mediaUrl}" class="max-h-48 rounded-2xl shadow-lg object-contain">`;
+                    mediaBox.innerHTML = `<img src="${mediaSrc}" class="max-h-48 rounded-2xl shadow-lg object-contain">`;
                 }
             }
             document.getElementById('donationAlertOverlay').classList.remove('hidden');
