@@ -1,3 +1,4 @@
+```javascript
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -24,10 +25,7 @@ io.on('connection', (socket) => {
             teacherName,
             title,
             subscribers: 124,
-            likes: 0,
-            bgm: 'none',
-            latestNotice: null,
-            latestQuiz: null
+            likes: 0
         };
         socket.emit('room_created', { roomCode, title, subscribers: 124, likes: 0 });
     });
@@ -44,21 +42,14 @@ io.on('connection', (socket) => {
             roomCode,
             title: room.title,
             subscribers: room.subscribers,
-            likes: room.likes,
-            bgm: room.bgm,
-            latestNotice: room.latestNotice,
-            latestQuiz: room.latestQuiz
+            likes: room.likes
         });
 
         io.to(roomCode).emit('system_message', `${nickname} 학생이 수업에 입장했습니다.`);
     });
 
-    socket.on('send_chat', ({ roomCode, sender, message, icon, isSecret }) => {
-        io.to(roomCode).emit('new_chat', { sender, message, icon, isSecret });
-    });
-
-    socket.on('whiteboard_draw', ({ roomCode, drawData }) => {
-        socket.to(roomCode).emit('whiteboard_draw', drawData);
+    socket.on('send_chat', ({ roomCode, sender, message, icon }) => {
+        io.to(roomCode).emit('new_chat', { sender, message, icon });
     });
 
     socket.on('toggle_subscribe', ({ roomCode, subscribed }) => {
@@ -75,18 +66,8 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('stats_update', { subscribers: room.subscribers, likes: room.likes });
     });
 
-    socket.on('teacher_quiz', ({ roomCode, quizData }) => {
-        const room = rooms[roomCode];
-        if (!room) return;
-        room.latestQuiz = quizData;
-        io.to(roomCode).emit('teacher_quiz', quizData);
-    });
-
     socket.on('live_event', (payload) => {
-        const { roomCode, type } = payload;
-        const room = rooms[roomCode];
-        if (!room) return;
-        if (type === 'notice') room.latestNotice = payload.message;
+        const { roomCode } = payload;
         io.to(roomCode).emit('live_event', payload);
     });
 });
