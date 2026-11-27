@@ -88,3 +88,5 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('Server running on port ' + PORT);
 });
 ```eof
+
+에러 로그를 보니 `server.js` 파일 맨 끝부분이 잘리거나 문법 오류(`SyntaxError: Unexpected end of input`)가 발생했습니다! 위 코드를 깃허브의 **`server.js`** 파일에 전체 복사해서 덮어씌워 주시면 이제 에러 없이 정상적으로 포트 바인딩이 완료될 것입니다.
