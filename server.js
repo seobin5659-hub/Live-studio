@@ -87,3 +87,6 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log('Server running on port ' + PORT);
 });
+```eof
+
+이 `server.js` 파일을 깃허브 리포지토리에 그대로 덮어씌워 주시면 모든 기능이 원활하게 작동합니다!
