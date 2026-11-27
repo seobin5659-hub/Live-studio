@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>선생님 실시간 라이브 스튜디오 ULTIMATE PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
@@ -65,7 +66,7 @@
         <button onclick="document.getElementById('donationAlertOverlay').classList.add('hidden')" class="bg-white text-slate-950 font-black px-4 py-1.5 rounded-xl text-[10px] shadow-lg">닫기</button>
     </div>
 
-    <!-- 1. 초기 역할 선택 로비 화면 (6자리 참여 코드 확실한 매칭) -->
+    <!-- 1. 초기 역할 선택 로비 화면 (6자리 참여 코드 소켓 통신 완벽 연동) -->
     <main id="lobbyView" class="flex-1 flex items-center justify-center p-4">
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
             <div class="text-center">
@@ -145,6 +146,8 @@
 
                 <!-- 선생님 카메라 비디오 -->
                 <video id="teacherVideo" autoplay playsinline muted class="hidden absolute inset-0 w-full h-full object-cover z-0"></video>
+                <!-- 학생들에게 송출되는 선생님 화면 이미지 (실시간 스트리밍) -->
+                <img id="studentRemoteVideo" class="hidden absolute inset-0 w-full h-full object-cover z-0" alt="선생님 송출 화면">
 
                 <!-- 스마트 판서 칠판 Canvas -->
                 <canvas id="whiteboardCanvas" class="hidden absolute inset-0 w-full h-full z-20 cursor-crosshair touch-none"></canvas>
@@ -267,7 +270,7 @@
         </div>
     </main>
 
-    <!-- 포인트 얻기 모달 (퀴즈 25초 쿨타임 + 고퀄 가위바위보) -->
+    <!-- 포인트 얻기 모달 (퀴즈 한 번 풀면 모달 닫히고 25초간 재진입 불가) -->
     <div id="earnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between">
@@ -297,7 +300,7 @@
                     <div id="qOptions" class="space-y-2 pt-1"></div>
                 </div>
                 <div id="qFeedback" class="hidden p-3 rounded-xl text-xs font-bold text-center"></div>
-                <button id="nextQuizBtn" onclick="nextQuiz()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs">다른 문제 보기</button>
+                <!-- '다음 문제 보기' 버튼 제거하여 무조건 1회 풀면 나가도록 함 -->
             </div>
 
             <!-- 고퀄 가위바위보 섹션 -->
@@ -386,6 +389,8 @@
     </div>
 
     <script>
+        const socket = io();
+
         const STICKERS = [
             { id: 's1', req: 0, type: 'emoji', icon: '👍', label: '엄지척' },
             { id: 's3', req: 100, type: 'emoji', icon: '🔥', label: '100pt 열정' },
@@ -413,7 +418,8 @@
             isSecretChat: false,
             customTeacherQuiz: null,
             localStream: null,
-            isBoardActive: false
+            isBoardActive: false,
+            videoInterval: null
         };
 
         function showToast(msg, isErr = false) {
@@ -443,8 +449,7 @@
             state.nickname = name;
             state.isTeacher = true;
 
-            enterStudioMode(name, title, roomCode);
-            showToast(`👨‍🏫 방 개설 완료! 참여 코드: ${roomCode}`);
+            socket.emit('create_room', { roomCode, teacherName: name, title });
         }
 
         function handleJoinStudent(e) {
@@ -456,9 +461,24 @@
             state.roomCode = roomCode;
             state.isTeacher = false;
 
-            enterStudioMode(nickname, '라이브 수업', roomCode);
-            showToast('🎓 수업에 입장했습니다! (300pt)');
+            socket.emit('join_room', { roomCode, nickname });
         }
+
+        socket.on('room_created', ({ roomCode, title }) => {
+            enterStudioMode(state.nickname, title, roomCode);
+            showToast(`👨‍🏫 방 개설 완료! 참여 코드: ${roomCode}`);
+        });
+
+        socket.on('join_success', ({ roomCode, title, subscribers, likes }) => {
+            document.getElementById('subCount').innerText = subscribers;
+            document.getElementById('likeCount').innerText = likes;
+            enterStudioMode(state.nickname, title, roomCode);
+            showToast('🎓 수업에 입장했습니다! (300pt)');
+        });
+
+        socket.on('join_error', (msg) => {
+            showToast(msg, true);
+        });
 
         function enterStudioMode(name, title, roomCode) {
             document.getElementById('lobbyView').classList.add('hidden');
@@ -478,11 +498,14 @@
                 document.getElementById('leaveBtnText').innerText = '라이브 방송 종료';
             } else {
                 document.getElementById('leaveBtnText').innerText = '라이브 나가기';
+                document.getElementById('studentRemoteVideo').classList.remove('hidden');
+                document.getElementById('defaultStageContent').classList.add('hidden');
             }
         }
 
         function leaveLiveRoom() {
             if (state.localStream) state.localStream.getTracks().forEach(t => t.stop());
+            if (state.videoInterval) clearInterval(state.videoInterval);
             location.reload();
         }
 
@@ -497,6 +520,8 @@
                     defaultContent.classList.add('hidden');
                     document.getElementById('camBtn').className = 'bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
                     document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video-slash"></i><span>카메라 끄기</span>';
+                    
+                    startTeacherStreaming(video);
                     showToast('📷 카메라가 켜졌습니다!');
                 } else {
                     state.localStream.getTracks().forEach(t => t.stop());
@@ -504,6 +529,7 @@
                     video.srcObject = null;
                     video.classList.add('hidden');
                     defaultContent.classList.remove('hidden');
+                    if (state.videoInterval) { clearInterval(state.videoInterval); state.videoInterval = null; }
                     document.getElementById('camBtn').className = 'bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-md';
                     document.getElementById('camBtn').innerHTML = '<i class="fa-solid fa-video"></i><span>카메라 켜기</span>';
                     showToast('카메라가 꺼졌습니다.');
@@ -521,16 +547,41 @@
                 video.srcObject = stream;
                 video.classList.remove('hidden');
                 defaultContent.classList.add('hidden');
+                startTeacherStreaming(video);
                 showToast('🖥️ 화면 공유가 시작되었습니다!');
                 stream.getVideoTracks()[0].onended = () => {
                     video.srcObject = null;
                     video.classList.add('hidden');
                     defaultContent.classList.remove('hidden');
+                    if (state.videoInterval) { clearInterval(state.videoInterval); state.videoInterval = null; }
                 };
             } catch {
                 showToast('화면 공유 취소', true);
             }
         }
+
+        function startTeacherStreaming(videoEl) {
+            if (state.videoInterval) clearInterval(state.videoInterval);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            state.videoInterval = setInterval(() => {
+                if (!videoEl.videoWidth) return;
+                canvas.width = 640;
+                canvas.height = 360;
+                ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+                const frameData = canvas.toDataURL('image/jpeg', 0.5);
+                socket.emit('stream_frame', { roomCode: state.roomCode, frame: frameData });
+            }, 100);
+        }
+
+        socket.on('stream_frame', ({ frame }) => {
+            if (!state.isTeacher) {
+                const remoteImg = document.getElementById('studentRemoteVideo');
+                remoteImg.classList.remove('hidden');
+                document.getElementById('defaultStageContent').classList.add('hidden');
+                remoteImg.src = frame;
+            }
+        });
 
         function toggleFullscreenStage() {
             const container = document.getElementById('stageContainer');
@@ -582,6 +633,10 @@
                 const y = (e.clientY || e.touches[0].clientY) - rect.top;
                 ctx.lineTo(x, y);
                 ctx.stroke();
+
+                if (state.isTeacher) {
+                    socket.emit('whiteboard_draw', { roomCode: state.roomCode, drawData: { type: 'draw', x, y, color: drawColor } });
+                }
             };
 
             const stopDraw = () => { isDrawing = false; };
@@ -596,8 +651,21 @@
             canvas.ontouchend = stopDraw;
         }
 
+        socket.on('whiteboard_draw', (data) => {
+            if (!state.isTeacher && ctx) {
+                if (data.type === 'clear') {
+                    ctx.clearRect(0, 0, 10000, 10000);
+                }
+            }
+        });
+
         function setDrawColor(col) { drawColor = col; if (ctx) ctx.strokeStyle = col; }
-        function clearWhiteboard() { if (ctx) ctx.clearRect(0, 0, 10000, 10000); }
+        function clearWhiteboard() {
+            if (ctx) ctx.clearRect(0, 0, 10000, 10000);
+            if (state.isTeacher) {
+                socket.emit('whiteboard_draw', { roomCode: state.roomCode, drawData: { type: 'clear' } });
+            }
+        }
 
         function uploadWhiteboardImage(e) {
             const file = e.target.files[0];
@@ -627,15 +695,19 @@
         }
 
         function toggleSubscribe() {
-            updateUI();
+            socket.emit('toggle_subscribe', { roomCode: state.roomCode, subscribed: true });
             showToast('구독 완료! 🔔');
-            document.getElementById('subCount').innerText = parseInt(document.getElementById('subCount').innerText) + 1;
         }
 
         function addLike() {
-            document.getElementById('likeCount').innerText = parseInt(document.getElementById('likeCount').innerText) + 1;
+            socket.emit('add_like', { roomCode: state.roomCode });
             showToast('좋아요! ❤️');
         }
+
+        socket.on('stats_update', ({ subscribers, likes }) => {
+            document.getElementById('subCount').innerText = subscribers;
+            document.getElementById('likeCount').innerText = likes;
+        });
 
         let audioCtx, bgmTimer;
         function changeBgm() {
@@ -669,9 +741,11 @@
                 </button>
             `).join('');
         }
-        function sendSticker(icon) { appendChat(state.nickname || '나', `[스티커]`, icon); document.getElementById('stickerDrawer').classList.add('hidden'); }
+        function sendSticker(icon) {
+            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname || '나', message: '[스티커]', icon, isSecret: state.isSecretChat });
+            document.getElementById('stickerDrawer').classList.add('hidden');
+        }
 
-        // 비밀채팅 토글 버튼 상태 표시 확실히 연동
         function toggleSecretChatMode() {
             state.isSecretChat = !state.isSecretChat;
             const btn = document.getElementById('secretChatBtn');
@@ -702,7 +776,7 @@
             if (!txt) return;
             input.value = '';
 
-            appendChat(state.nickname || '나', txt, null, state.isSecretChat);
+            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname || '나', message: txt, icon: null, isSecret: state.isSecretChat });
 
             state.lockUntil = now + 9000;
             const spamBar = document.getElementById('spamBar');
@@ -718,6 +792,19 @@
                 }
             }, 1000);
         }
+
+        socket.on('new_chat', ({ sender, message, icon, isSecret }) => {
+            appendChat(sender, message, icon, isSecret);
+        });
+
+        socket.on('system_message', (msg) => {
+            const box = document.getElementById('chatBox');
+            const div = document.createElement('div');
+            div.className = 'text-center text-slate-500 py-1 text-[11px] font-bold';
+            div.innerText = msg;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        });
 
         function appendChat(sender, msg, icon = null, isSecret = false) {
             const box = document.getElementById('chatBox');
@@ -739,12 +826,12 @@
             if (tab === 'quiz' && !state.currentQuiz) nextQuiz();
         }
 
-        // 문제 쿨타임 및 다른 문제 보기 로직
+        // 퀴즈 1회 풀면 즉시 모달 닫히고 25초간 재진입 금지 (엄격한 쿨타임)
         function nextQuiz() {
             const now = Date.now();
             if (now < state.quizCooldownUntil) {
                 const remain = Math.ceil((state.quizCooldownUntil - now) / 1000);
-                return showToast(`⏳ 25초 쿨타임 중입니다! (${remain}초)`, true);
+                return showToast(`⏳ 25초 쿨타임 중입니다! (${remain}초 남음)`, true);
             }
 
             let item = state.customTeacherQuiz || QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)];
@@ -771,7 +858,7 @@
                 fb.innerText = `오답! 정답은 [${state.currentQuiz.correct}] 입니다.`;
             }
 
-            // 문제 풀면 모달 닫히고 25초 쿨타임 시작
+            // 퀴즈 완료 즉시 모달 닫기 (다음 문제 버튼 없음)
             document.getElementById('earnModal').classList.add('hidden');
             showToast('퀴즈 완료! 25초 동안 쿨타임이 시작됩니다.', !correct);
 
@@ -836,8 +923,19 @@
             document.getElementById('noticeBannerText').innerText = txt;
             document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
             document.getElementById('teacherNoticeModal').classList.add('hidden');
+            socket.emit('live_event', { roomCode: state.roomCode, type: 'notice', message: txt });
             showToast('공지 등록 완료!');
         }
+
+        socket.on('live_event', (payload) => {
+            if (payload.type === 'notice') {
+                document.getElementById('noticeBannerText').innerText = payload.message;
+                document.getElementById('pinnedNoticeBanner').classList.remove('hidden');
+            }
+            if (payload.type === 'donation_alert') {
+                triggerDonationAlert(payload.donator, payload.amt, payload.msg, payload.mediaSrc, payload.isVideo);
+            }
+        });
 
         function openPenaltyVoteModal() {
             document.getElementById('penaltyListContainer').innerHTML = PENALTIES_50.map(p => `
@@ -850,8 +948,7 @@
         function submitPenaltyVote() { document.getElementById('penaltyVoteModal').classList.add('hidden'); showToast('벌칙 투표 완료!'); }
 
         function openDonateModal() { document.getElementById('donateModal').classList.remove('hidden'); }
-        
-        // 후원 전송 및 AI 음성 읽기 (TTS)
+
         function sendDonation() {
             const amt = parseInt(document.getElementById('dAmount').value);
             const msg = document.getElementById('dMsg').value.trim() || '후원합니다!';
@@ -869,20 +966,21 @@
                     const resultUrl = e.target.result;
                     const isVideo = fileInput.files[0].type.startsWith('video');
                     triggerDonationAlert(state.nickname || '학생', amt, msg, resultUrl, isVideo);
+                    socket.emit('live_event', { roomCode: state.roomCode, type: 'donation_alert', donator: state.nickname || '학생', amt, msg, mediaSrc: resultUrl, isVideo });
                 };
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
                 triggerDonationAlert(state.nickname || '학생', amt, msg, null, false);
+                socket.emit('live_event', { roomCode: state.roomCode, type: 'donation_alert', donator: state.nickname || '학생', amt, msg, mediaSrc: null, isVideo: false });
             }
             
-            // AI 음성 읽어주기 (TTS)
             if ('speechSynthesis' in window) {
                 const speech = new SpeechSynthesisUtterance(`${state.nickname || '학생'}님이 ${amt}포인트를 후원하셨습니다. 메시지: ${msg}`);
                 speech.lang = 'ko-KR';
                 window.speechSynthesis.speak(speech);
             }
 
-            appendChat(state.nickname || '학생', `🎁 ${amt}pt 후원: "${msg}"`);
+            socket.emit('send_chat', { roomCode: state.roomCode, sender: state.nickname || '학생', message: `🎁 ${amt}pt 후원: "${msg}"`, icon: null });
             showToast(`${amt}pt 후원 성공!`);
         }
 
