@@ -17,6 +17,7 @@ const io = new Server(server, {
 const rooms = {};
 
 io.on('connection', (socket) => {
+    // 선생님 방 개설
     socket.on('create_room', ({ roomCode, teacherName, title }) => {
         socket.join(roomCode);
         rooms[roomCode] = {
@@ -29,6 +30,7 @@ io.on('connection', (socket) => {
         socket.emit('room_created', { roomCode, title, subscribers: 124, likes: 0 });
     });
 
+    // 학생 방 입장 (6자리 참여 코드 확실한 매칭)
     socket.on('join_room', ({ roomCode, nickname }) => {
         const room = rooms[roomCode];
         if (!room) {
@@ -47,18 +49,22 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('system_message', nickname + ' 학생이 수업에 입장했습니다.');
     });
 
+    // 실시간 카메라 및 화면 스트리밍 프레임
     socket.on('stream_frame', ({ roomCode, frame }) => {
         socket.to(roomCode).emit('stream_frame', { frame });
     });
 
+    // 스마트 칠판 드로잉 동기화
     socket.on('whiteboard_draw', ({ roomCode, drawData }) => {
         socket.to(roomCode).emit('whiteboard_draw', drawData);
     });
 
-    socket.on('send_chat', ({ roomCode, sender, message, icon }) => {
-        io.to(roomCode).emit('new_chat', { sender, message, icon });
+    // 실시간 라이브 채팅 및 비밀채팅
+    socket.on('send_chat', ({ roomCode, sender, message, icon, isSecret }) => {
+        io.to(roomCode).emit('new_chat', { sender, message, icon, isSecret });
     });
 
+    // 구독 및 좋아요 업데이트
     socket.on('toggle_subscribe', ({ roomCode, subscribed }) => {
         const room = rooms[roomCode];
         if (!room) return;
@@ -73,6 +79,7 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('stats_update', { subscribers: room.subscribers, likes: room.likes });
     });
 
+    // 공지 및 후원 이벤트
     socket.on('live_event', (payload) => {
         const { roomCode } = payload;
         io.to(roomCode).emit('live_event', payload);
@@ -85,5 +92,5 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log('Server running on port ' + PORT);
+    console.log('Live Studio Server running on port ' + PORT);
 });
